@@ -35,8 +35,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "npm run clean && npm run generate && tsx scripts/build.ts",
-    "publish": "npm run publish --access public",
+    "build": "pnpm run clean && pnpm run generate && tsx scripts/build.ts",
+    "release": "pnpm publish --access public",
     "generate": "tsx scripts/generate.ts",
     "clean": "rimraf dist build"
   },
