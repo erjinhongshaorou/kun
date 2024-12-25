@@ -1,6 +1,6 @@
 {
   "name": "@hashcoop/icons",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -26,6 +26,9 @@
       "require": "./dist/cjs/js.js",
       "types": "./dist/types/js.d.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "dist",
