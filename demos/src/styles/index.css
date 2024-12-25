@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.demo-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin: 2rem 0;
+}
+
+.demo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%; /* 确保所有 demo 项宽度一致 */
+}
+
+.demo-item h3 {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin: 0;
+  text-align: center;
+}
+
+.text-blue-500 {
+  color: #3b82f6;
+}
+
+.icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px; /* 确保容器有足够的空间 */
+}

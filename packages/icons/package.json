@@ -1,0 +1,60 @@
+{
+  "name": "@hashcoop/icons",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./outline": {
+      "import": "./dist/esm/outline/index.js",
+      "require": "./dist/cjs/outline/index.js",
+      "types": "./dist/types/outline/index.d.ts"
+    },
+    "./solid": {
+      "import": "./dist/esm/solid/index.js",
+      "require": "./dist/cjs/solid/index.js",
+      "types": "./dist/types/solid/index.d.ts"
+    },
+    "./js": {
+      "import": "./dist/esm/js.js",
+      "require": "./dist/cjs/js.js",
+      "types": "./dist/types/js.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npm run clean && npm run generate && tsx scripts/build.ts",
+    "generate": "tsx scripts/generate.ts",
+    "clean": "rimraf dist build"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.25.9",
+    "@svgr/core": "^8.0.0",
+    "@svgr/plugin-jsx": "^8.1.0",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "chalk": "^5.0.0",
+    "esbuild": "^0.19.0",
+    "esbuild-plugin-d.ts": "^1.1.0",
+    "glob": "^10.0.0",
+    "minimist": "^1.2.8",
+    "react": "^18.2.0",
+    "rimraf": "^5.0.0",
+    "svgo": "^3.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
