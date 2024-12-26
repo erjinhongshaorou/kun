@@ -9,7 +9,7 @@ type ColorMap = {
 const COLOR_MAPPINGS: ColorMap = {
   "#000000": "var(--ll-svg-default-color)",
   "#007BFE": "currentColor",
-  "#e5e5eb": "var(--ll-svg-second-color)",
+  "#EEF1FB": "var(--ll-svg-second-color)",
 } as const;
 
 // 检查颜色是否在映射中的辅助函数
