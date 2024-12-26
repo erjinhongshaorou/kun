@@ -12,53 +12,44 @@ const COLOR_MAPPINGS: ColorMap = {
   "#EEF1FB": "var(--ll-svg-second-color)",
 } as const;
 
-// 检查颜色是否在映射中的辅助函数
-function isValidColor(color: string): color is keyof typeof COLOR_MAPPINGS {
-  return color.toLowerCase() in COLOR_MAPPINGS;
-}
+// 定义需要保留原始值的特殊颜色
+const PRESERVED_COLORS = new Set(["none", "white"]);
 
-// SVGO 配置
 const optimizeConfig: Config = {
   plugins: [
     "removeXMLNS",
     {
       name: "removeAttrs",
       params: {
-        attrs: ["class", "data-slot", "width", "height", "aria-hidden"],
+        attrs: ["width", "height"],
       },
     },
-    {
-      name: "preset-default",
-      params: {
-        overrides: {
-          removeViewBox: false,
-        },
-      },
-    },
-    // 自定义颜色替换插件
     {
       name: "customColorReplacer",
-      fn: () => {
-        return {
-          element: {
-            enter: (node) => {
-              if (node.type === "element") {
-                // 处理 fill 属性
-                const fill = node.attributes.fill;
-                if (fill && isValidColor(fill)) {
-                  node.attributes.fill = COLOR_MAPPINGS[fill];
-                }
+      fn: () => ({
+        element: {
+          enter: (node: any) => {
+            if (node.type === "element") {
+              // 处理所有可能包含颜色值的属性
+              const colorAttributes = ["fill", "stroke"];
 
-                // 处理 stroke 属性
-                const stroke = node.attributes.stroke;
-                if (stroke && isValidColor(stroke)) {
-                  node.attributes.stroke = COLOR_MAPPINGS[stroke];
+              colorAttributes.forEach((attr) => {
+                const value = node.attributes[attr];
+                if (value && !PRESERVED_COLORS.has(value.toLowerCase())) {
+                  // 从 COLOR_MAPPINGS 中获取映射的颜色值
+                  const mappedColor =
+                    COLOR_MAPPINGS[
+                      value.toUpperCase() as keyof typeof COLOR_MAPPINGS
+                    ];
+                  if (mappedColor) {
+                    node.attributes[attr] = mappedColor;
+                  }
                 }
-              }
-            },
+              });
+            }
           },
-        };
-      },
+        },
+      }),
     },
   ],
 };

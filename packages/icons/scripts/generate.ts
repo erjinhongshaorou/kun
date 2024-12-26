@@ -9,6 +9,17 @@ interface IconSet {
   baseName: string;
 }
 
+function camelCaseAttributes(svg: string): string {
+  return svg
+    .replace(/fill-rule/g, "fillRule")
+    .replace(/clip-rule/g, "clipRule")
+    .replace(/clip-path/g, "clipPath")
+    .replace(/stroke-linecap/g, "strokeLinecap")
+    .replace(/stroke-linejoin/g, "strokeLinejoin")
+    .replace(/stroke-width/g, "strokeWidth")
+    .replace(/stroke-miterlimit/g, "strokeMiterlimit");
+}
+
 async function generateIconComponents() {
   try {
     const svgFiles = await glob("src/**/*.svg");
@@ -28,23 +39,17 @@ async function generateIconComponents() {
 
       // 处理 SVG
       let processedSvg = processSvg(svg);
-
-      // 提取 viewBox
-      const viewBoxMatch = processedSvg.match(/viewBox="([^"]*)"/);
-      const viewBox = viewBoxMatch ? viewBoxMatch[1] : "0 0 24 24";
+      // 转换属性为驼峰形式
+      processedSvg = camelCaseAttributes(processedSvg);
 
       // 替换 SVG 标签
       processedSvg = processedSvg.replace(
-        /<svg[^>]*>/,
-        `<svg
-          viewBox="${viewBox}"
+        /<svg([^>]*)>/,
+        `<svg$1
           ref={ref}
           width={size}
           height={size}
           className={className}
-          aria-hidden={!title}
-          aria-labelledby={titleId}
-          style={mergedStyle}
           {...props}>`
       );
 
@@ -70,7 +75,7 @@ const ${componentName} = memo(forwardRef<SVGSVGElement, IconProps>(({
   
   const mergedStyle = {
     '--ll-svg-default-color': '#000000',
-    '--ll-svg-second-color': '#e5e5eb',
+    '--ll-svg-second-color': '#EEF1FB',
     ...style
   } as React.CSSProperties;
   
@@ -150,7 +155,7 @@ async function generateJsVersion(svgFiles: string[]) {
   const defaultStyles = `
     :root {
       --ll-svg-default-color: #000000;
-      --ll-svg-second-color: #e5e5eb;
+      --ll-svg-second-color: #EEF1FB;
     }
   `;
 
@@ -199,9 +204,11 @@ async function generateJsVersion(svgFiles: string[]) {
         defaultColor,
         secondaryColor
       } = options;
-    
+
+      // 保持原始大小写，并加回后缀
+      const iconName = name.charAt(0).toUpperCase() + name.slice(1);
       const iconSet = icons[style as keyof typeof icons];
-      const svg = iconSet?.[name];
+      const svg = iconSet?.[iconName];
       
       if (!svg) {
         console.warn(\`Icon "\${name}" not found in \${style} style\`);
@@ -216,18 +223,29 @@ async function generateJsVersion(svgFiles: string[]) {
       if (secondaryColor) {
         container.style.setProperty('--ll-svg-second-color', secondaryColor);
       }
-      
-      // 构建 style 属性
-      const styleString = 'min-width: ' + size + 'px; min-height: ' + size + 'px; ' + container.style.cssText;
+
+      // 先处理颜色替换
+      let processedSvg = svg
+        .replace(/currentColor/g, color || 'currentColor');
 
       // 替换 SVG 标签
-      return svg
-      .replace(
-        /<svg([^>]*)>/,
-        '<svg$1 width="' + size + '" height="' + size + '" style="' + styleString + '">'
-      )
-      .replace(/class="([^"]*)"/, 'class="' + className + '"')
-      .replace(/currentColor/g, color || 'currentColor');
+      processedSvg = processedSvg.replace(
+        /(<svg[^>]*)>/,
+        function(match, svgStart) {
+          // 移除已存在的 width 和 height
+          const cleanedStart = svgStart.replace(/(width|height)="[^"]*"/g, '');
+          
+          // 添加新的属性
+          return cleanedStart + 
+                ' width="' + size + '"' + 
+                ' height="' + size + '"' +
+                (container.style.cssText ? ' style="' + container.style.cssText + '"' : '') +
+                (className ? ' class="' + className + '"' : '') +
+                '>';
+        }
+      );
+
+      return processedSvg;
     }
     
     export function getAllIconNames(style: IconStyle = 'outline'): string[] {
