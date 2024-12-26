@@ -1,6 +1,5 @@
 import React from "react";
-import ReactDemo from "./demos/ReactDemo";
-import VanillaDemo from "./demos/VanillaDemo";
+import IconList from "./components/IconList";
 
 function App() {
   return (
@@ -12,21 +11,13 @@ function App() {
             Hashcoop Icons
           </h1>
           <p className="mt-3 text-lg text-gray-500">
-            Beautiful hand-crafted SVG icons, by the makers of Hashcoop
+            Beautiful hand-crafted SVG icons
           </p>
         </div>
 
-        {/* 示例展示区域 */}
+        {/* 图标列表展示 */}
         <div className="mt-16">
-          <h2 className="text-lg font-semibold text-gray-900 mb-8">
-            React Components
-          </h2>
-          <ReactDemo />
-
-          <h2 className="text-lg font-semibold text-gray-900 mb-8 mt-16">
-            JavaScript API
-          </h2>
-          <VanillaDemo />
+          <IconList />
         </div>
       </div>
     </div>

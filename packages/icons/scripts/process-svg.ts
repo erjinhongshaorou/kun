@@ -8,7 +8,7 @@ type ColorMap = {
 // 定义颜色映射对象
 const COLOR_MAPPINGS: ColorMap = {
   "#000000": "var(--ll-svg-default-color)",
-  "#1246ff": "currentColor",
+  "#007BFE": "currentColor",
   "#e5e5eb": "var(--ll-svg-second-color)",
 } as const;
 
