@@ -19,24 +19,23 @@ const optimizeConfig: Config = {
   plugins: [
     "removeXMLNS",
     {
-      name: "removeAttrs",
-      params: {
-        attrs: ["width", "height"],
-      },
-    },
-    {
-      name: "customColorReplacer",
+      // 移除 removeAttrs 插件，我们将在 customHandler 中处理 width 和 height
+      name: "customHandler",
       fn: () => ({
         element: {
           enter: (node: any) => {
             if (node.type === "element") {
-              // 处理所有可能包含颜色值的属性
-              const colorAttributes = ["fill", "stroke"];
+              // 只处理 svg 根标签的 width 和 height
+              if (node.name === "svg") {
+                delete node.attributes.width;
+                delete node.attributes.height;
+              }
 
+              // 处理所有元素的颜色属性
+              const colorAttributes = ["fill", "stroke"];
               colorAttributes.forEach((attr) => {
                 const value = node.attributes[attr];
                 if (value && !PRESERVED_COLORS.has(value.toLowerCase())) {
-                  // 从 COLOR_MAPPINGS 中获取映射的颜色值
                   const mappedColor =
                     COLOR_MAPPINGS[
                       value.toUpperCase() as keyof typeof COLOR_MAPPINGS
