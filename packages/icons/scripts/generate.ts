@@ -35,7 +35,7 @@ async function generateIconComponents() {
       const componentName = `${baseName
         .split("-")
         .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join("")}${style.charAt(0).toUpperCase() + style.slice(1)}Icon`;
+        .join("")}${style.charAt(0).toUpperCase() + style.slice(1)}`;
 
       // 处理 SVG
       let processedSvg = processSvg(svg);
