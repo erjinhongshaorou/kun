@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import * as OutlineIcons from "@hashcoop/icons/outline";
 import * as SolidIcons from "@hashcoop/icons/solid";
+import * as DefaultIcons from "@hashcoop/icons/default";
 import { getIcon } from "@hashcoop/icons/js";
 
 interface IconStyle {
@@ -9,69 +10,103 @@ interface IconStyle {
   jsName: string;
 }
 
-export default function IconList() {
-  const [activeTab, setActiveTab] = useState<"outline" | "solid">("outline");
+interface IconListProps {
+  activeTab: "outline" | "solid" | "default";
+}
+
+export default function IconList({ activeTab }: IconListProps) {
   const [icons, setIcons] = useState<IconStyle[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredIcons, setFilteredIcons] = useState<IconStyle[]>([]);
 
   useEffect(() => {
-    const currentIcons = activeTab === "outline" ? OutlineIcons : SolidIcons;
+    let currentIcons;
+    switch (activeTab) {
+      case "outline":
+        currentIcons = OutlineIcons;
+        break;
+      case "solid":
+        currentIcons = SolidIcons;
+        break;
+      case "default":
+        currentIcons = DefaultIcons;
+        break;
+    }
 
     const availableIcons = Object.entries(currentIcons).map(
       ([name, Component]) => {
-        const baseName = name.replace(/(Outline|Solid)Icon$/, "");
+        // 提取基本名称（去掉样式后缀）
+        const baseName = name.replace(/(Outline|Solid|Default)$/, "");
         return {
           name,
-          ReactComponent: Component,
+          ReactComponent: Component as React.ComponentType<any>,
           jsName: baseName,
         };
       }
     );
 
     setIcons(availableIcons);
-
-    setTimeout(() => {
-      availableIcons.forEach((icon) => {
-        const jsIcon = getIcon(icon.jsName, {
-          style: activeTab,
-          size: 40,
-          color: "#1246ff",
-          // 只在 solid 风格时设置第二颜色
-          ...(activeTab === "solid" ? { secondaryColor: "#EEF1FB" } : {}),
-        });
-        const container = document.getElementById(`js-${icon.jsName}`);
-        if (container && jsIcon) {
-          container.innerHTML = jsIcon;
-        }
-      });
-    });
+    // 重置搜索
+    setSearchTerm("");
+    setFilteredIcons(availableIcons);
   }, [activeTab]);
+
+  // 当搜索词或图标列表变化时过滤图标
+  useEffect(() => {
+    const filtered = searchTerm
+      ? icons.filter((icon) =>
+          icon.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : icons;
+
+    setFilteredIcons(filtered);
+  }, [searchTerm, icons]);
+
+  // 渲染 JS 图标的副作用
+  useEffect(() => {
+    // 延迟一点执行，确保 DOM 已经更新
+    const timeoutId = setTimeout(() => {
+      renderJSIcons();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [filteredIcons]);
+
+  // 渲染 JS 图标的函数
+  const renderJSIcons = () => {
+    filteredIcons.forEach((icon) => {
+      const jsIcon = getIcon(icon.jsName, {
+        style: activeTab,
+        size: 40,
+        color: "#1246ff",
+        // 根据样式可选择添加其他属性，只在 solid 风格时设置第二颜色
+        ...(activeTab === "solid" ? { secondaryColor: "#EEF1FB" } : {}),
+      });
+      const container = document.getElementById(`js-${icon.jsName}`);
+      if (container && jsIcon) {
+        container.innerHTML = jsIcon;
+      }
+    });
+  };
 
   return (
     <div>
-      {/* 标签切换 */}
-      <div className="mb-8 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab("outline")}
-            className={`${
-              activeTab === "outline"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            } pb-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Outline
-          </button>
-          <button
-            onClick={() => setActiveTab("solid")}
-            className={`${
-              activeTab === "solid"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            } pb-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Solid
-          </button>
-        </nav>
+      {/* 搜索框 */}
+      <div className="mb-6">
+        <div className="relative rounded-md shadow-sm max-w-md mx-auto">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full rounded-md border-gray-300 py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Search icons..."
+          />
+        </div>
+      </div>
+
+      {/* 图标统计 */}
+      <div className="text-center mb-6 text-gray-500">
+        Showing {filteredIcons.length} of {icons.length} icons
       </div>
 
       {/* 图标网格 */}
@@ -79,13 +114,13 @@ export default function IconList() {
         {/* React 组件版本 */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            React Components ({icons.length} icons)
+            React Components
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {icons.map((icon) => (
+            {filteredIcons.map((icon) => (
               <div
                 key={`react-${icon.name}`}
-                className="flex flex-col items-center p-4 rounded-lg border border-gray-200 bg-white min-w-[120px] min-h-[120px]"
+                className="flex flex-col items-center p-4 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:shadow-md transition-all duration-200 min-w-[120px] min-h-[120px]"
               >
                 <div className="flex items-center justify-center h-[40px]">
                   <icon.ReactComponent size={40} className="text-[#1246ff]" />
@@ -101,13 +136,13 @@ export default function IconList() {
         {/* JS API 版本 */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            JavaScript API ({icons.length} icons)
+            JavaScript API
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {icons.map((icon) => (
+            {filteredIcons.map((icon) => (
               <div
-                key={`js-${icon.jsName}`}
-                className="flex flex-col items-center p-4 rounded-lg border border-gray-200 bg-white min-w-[120px] min-h-[120px]"
+                key={`js-box-${icon.jsName}`}
+                className="flex flex-col items-center p-4 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:shadow-md transition-all duration-200 min-w-[120px] min-h-[120px]"
               >
                 <div className="flex items-center justify-center h-[40px]">
                   <div id={`js-${icon.jsName}`}></div>
