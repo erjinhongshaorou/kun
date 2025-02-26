@@ -37,8 +37,8 @@ async function generateIconComponents() {
         .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
         .join("")}${style.charAt(0).toUpperCase() + style.slice(1)}`;
 
-      // 处理 SVG
-      let processedSvg = processSvg(svg);
+      // 处理 SVG - 传递样式
+      let processedSvg = processSvg(svg, style);
       // 转换属性为驼峰形式
       processedSvg = camelCaseAttributes(processedSvg);
 
@@ -50,47 +50,50 @@ async function generateIconComponents() {
           width={size}
           height={size}
           className={className}
+          style={style}
           {...props}>`
       );
 
+      const styleProps = `style={{
+        '--ll-svg-default-color': '#000000',
+        '--ll-svg-second-color': '#EEF1FB',
+        ...style
+      } as React.CSSProperties}`;
+
       // 生成组件代码
       const componentCode = `
-import React, { forwardRef, memo } from 'react'
-import type { SVGProps } from 'react'
+        import React, { forwardRef, memo } from 'react'
+        import type { SVGProps } from 'react'
 
-interface IconProps extends SVGProps<SVGSVGElement> {
-  size?: number | string
-  className?: string
-  title?: string
-}
+        interface IconProps extends SVGProps<SVGSVGElement> {
+          size?: number | string
+          className?: string
+          title?: string
+        }
 
-const ${componentName} = memo(forwardRef<SVGSVGElement, IconProps>(({
-  size = 24,
-  className = '',
-  title,
-  style,
-  ...props
-}, ref) => {
-  const titleId = title ? \`title-\${Math.random().toString(36).substr(2, 9)}\` : undefined;
-  
-  const mergedStyle = {
-    '--ll-svg-default-color': '#000000',
-    '--ll-svg-second-color': '#EEF1FB',
-    ...style
-  } as React.CSSProperties;
-  
-  return (
-    ${processedSvg.replace(
-      "</svg>",
-      "  {title ? <title id={titleId}>{title}</title> : null}\n    </svg>"
-    )}
-  )
-}));
+        const ${componentName} = memo(forwardRef<SVGSVGElement, IconProps>(({
+          size = 24,
+          className = '',
+          title,
+          style,
+          ...props
+        }, ref) => {
+          const titleId = title ? \`title-\${Math.random().toString(36).substr(2, 9)}\` : undefined;
+          
+          return (
+            ${processedSvg
+              .replace(
+                "</svg>",
+                "  {title ? <title id={titleId}>{title}</title> : null}\n    </svg>"
+              )
+              .replace(/style=\{[^}]*\}/, styleProps)}
+          )
+        }));
 
-${componentName}.displayName = '${componentName}'
+        ${componentName}.displayName = '${componentName}'
 
-export default ${componentName}
-`;
+        export default ${componentName}
+        `;
 
       const componentDir = `build/components/${style}`;
       await fs.mkdir(componentDir, { recursive: true });
@@ -149,6 +152,7 @@ async function generateJsVersion(svgFiles: string[]) {
   const icons: IconSet = {
     outline: {},
     solid: {},
+    default: {},
   };
 
   // CSS 变量的默认值
@@ -162,10 +166,10 @@ async function generateJsVersion(svgFiles: string[]) {
   for (const file of svgFiles) {
     const svg = await fs.readFile(file, "utf8");
     const pathParts = file.split(path.sep);
-    const style = pathParts[1] as "outline" | "solid";
+    const style = pathParts[1];
     const baseName = path.parse(pathParts[2]).name;
 
-    const processedSvg = processSvg(svg);
+    const processedSvg = processSvg(svg, style); // 传递样式参数
     icons[style][baseName] = processedSvg;
   }
 
@@ -179,12 +183,12 @@ async function generateJsVersion(svgFiles: string[]) {
     }
 
     const icons: {
-      [key in 'outline' | 'solid']: {
+      [key in 'outline' | 'solid' | 'default']: {
         [key: string]: string;
       };
     } = ${JSON.stringify(icons, null, 2)};
     
-    export type IconStyle = 'outline' | 'solid';
+    export type IconStyle = 'outline' | 'solid' | 'default';
     
     export interface IconOptions {
       size?: number | string;
@@ -217,6 +221,7 @@ async function generateJsVersion(svgFiles: string[]) {
 
       // 创建临时容器来设置样式
       const container = document.createElement('div');
+      // 设置CSS变量
       if (defaultColor) {
         container.style.setProperty('--ll-svg-default-color', defaultColor);
       }
@@ -225,8 +230,7 @@ async function generateJsVersion(svgFiles: string[]) {
       }
 
       // 先处理颜色替换
-      let processedSvg = svg
-        .replace(/currentColor/g, color || 'currentColor');
+      let processedSvg = svg.replace(/currentColor/g, color || 'currentColor');
 
       // 替换 SVG 标签
       processedSvg = processedSvg.replace(
@@ -252,7 +256,7 @@ async function generateJsVersion(svgFiles: string[]) {
       return Object.keys(icons[style]);
     }
     
-    export const styles = ['outline', 'solid'] as const;
+    export const styles = ['outline', 'solid', 'default'] as const;
   `;
 
   await fs.writeFile("build/js.ts", jsContent);

@@ -21,6 +21,11 @@
       "require": "./dist/cjs/solid/index.js",
       "types": "./dist/types/solid/index.d.ts"
     },
+    "./default": {
+      "import": "./dist/esm/default/index.js",
+      "require": "./dist/cjs/default/index.js",
+      "types": "./dist/types/default/index.d.ts"
+    },
     "./js": {
       "import": "./dist/esm/js.js",
       "require": "./dist/cjs/js.js",
