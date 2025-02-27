@@ -70,18 +70,27 @@ export default function IconList({ activeTab }: IconListProps) {
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [filteredIcons]);
+  }, [filteredIcons, activeTab]);
 
   // 渲染 JS 图标的函数
   const renderJSIcons = () => {
     filteredIcons.forEach((icon) => {
-      const jsIcon = getIcon(icon.jsName, {
+      // 根据不同的风格设置不同的参数
+      const iconParams: any = {
         style: activeTab,
         size: 40,
-        color: "#1246ff",
-        // 根据样式可选择添加其他属性，只在 solid 风格时设置第二颜色
-        ...(activeTab === "solid" ? { secondaryColor: "#EEF1FB" } : {}),
-      });
+      };
+
+      // default 风格下不设置颜色，使用原始颜色
+      if (activeTab !== "default") {
+        iconParams.color = "#1246ff";
+        // 在 solid 风格时设置第二颜色
+        if (activeTab === "solid") {
+          iconParams.secondaryColor = "#EEF1FB";
+        }
+      }
+
+      const jsIcon = getIcon(icon.jsName, iconParams);
       const container = document.getElementById(`js-${icon.jsName}`);
       if (container && jsIcon) {
         container.innerHTML = jsIcon;
@@ -123,7 +132,12 @@ export default function IconList({ activeTab }: IconListProps) {
                 className="flex flex-col items-center p-4 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:shadow-md transition-all duration-200 min-w-[120px] min-h-[120px]"
               >
                 <div className="flex items-center justify-center h-[40px]">
-                  <icon.ReactComponent size={40} className="text-[#1246ff]" />
+                  {/* default 风格下不传入 className 以使用原始颜色 */}
+                  {activeTab === "default" ? (
+                    <icon.ReactComponent size={40} />
+                  ) : (
+                    <icon.ReactComponent size={40} className="text-[#1246ff]" />
+                  )}
                 </div>
                 <span className="mt-2 text-xs text-gray-500 text-center break-words w-full">
                   {icon.name}

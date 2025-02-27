@@ -2,21 +2,37 @@ import { optimize, Config } from "svgo";
 
 // 定义颜色映射的类型
 type ColorMap = {
-  [key: `#${string}`]: string;
+  [key: string]: string;
 };
 
-// 定义颜色映射对象
-const COLOR_MAPPINGS: ColorMap = {
-  "#000000": "var(--ll-svg-default-color)",
-  "#007BFE": "currentColor",
-  "#EEF1FB": "var(--ll-svg-second-color)",
-} as const;
+// 定义不同风格的颜色映射对象
+const STYLE_COLOR_MAPPINGS = {
+  // outline 和 solid 风格的颜色映射
+  standard: {
+    "#000000": "var(--ll-svg-default-color)",
+    black: "var(--ll-svg-default-color)", // 添加对 black 的支持
+    "#007BFE": "currentColor",
+    "#EEF1FB": "var(--ll-svg-second-color)",
+  } as ColorMap,
+
+  // default 风格的颜色映射
+  default: {
+    "#000000": "currentColor", // default 风格下黑色映射到 currentColor
+    black: "currentColor", // 添加对 black 的支持
+  } as ColorMap,
+};
 
 // 定义需要保留原始值的特殊颜色
 const PRESERVED_COLORS = new Set(["none", "white"]);
 
 // 创建针对不同样式的配置
 function createOptimizeConfig(style: string): Config {
+  // 选择合适的颜色映射
+  const colorMappings =
+    style === "default"
+      ? STYLE_COLOR_MAPPINGS.default
+      : STYLE_COLOR_MAPPINGS.standard;
+
   return {
     plugins: [
       "removeXMLNS",
@@ -38,10 +54,15 @@ function createOptimizeConfig(style: string): Config {
                 colorAttributes.forEach((attr) => {
                   const value = node.attributes[attr];
                   if (value && !PRESERVED_COLORS.has(value.toLowerCase())) {
-                    const mappedColor =
-                      COLOR_MAPPINGS[
-                        value.toUpperCase() as keyof typeof COLOR_MAPPINGS
-                      ];
+                    // 检查颜色值是否需要映射
+                    // 先尝试直接映射
+                    let mappedColor = colorMappings[value];
+
+                    // 如果直接映射失败，尝试转换为大写后映射
+                    if (!mappedColor && value.startsWith("#")) {
+                      mappedColor = colorMappings[value.toUpperCase()];
+                    }
+
                     if (mappedColor) {
                       node.attributes[attr] = mappedColor;
                     }
