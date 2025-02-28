@@ -14,6 +14,10 @@ interface IconListProps {
   activeTab: "outline" | "solid" | "default";
 }
 
+// 首字母小写
+function lowerFirstLetter(str: string): string {
+  return str.charAt(0).toLowerCase() + str.slice(1);
+}
 export default function IconList({ activeTab }: IconListProps) {
   const [icons, setIcons] = useState<IconStyle[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,7 +40,9 @@ export default function IconList({ activeTab }: IconListProps) {
     const availableIcons = Object.entries(currentIcons).map(
       ([name, Component]) => {
         // 提取基本名称（去掉样式后缀）
-        const baseName = name.replace(/(Outline|Solid|Default)$/, "");
+        const baseName = lowerFirstLetter(
+          name.replace(/(Outline|Solid|Default)$/, "")
+        );
         return {
           name,
           ReactComponent: Component as React.ComponentType<any>,
