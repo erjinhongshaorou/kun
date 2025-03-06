@@ -6,7 +6,7 @@ import { processSvg } from "./process-svg";
 interface IconSet {
   name: string;
   style: string;
-  baseName: string;
+  kebabName: string; // 中横线格式名称
 }
 
 function camelCaseAttributes(svg: string): string {
@@ -25,6 +25,16 @@ function capitalizeFirstLetter(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// 将中横线命名转换为驼峰命名
+function kebabToCamel(str: string): string {
+  return str.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+}
+
+// 将中横线命名转换为组件名格式（首字母大写的驼峰）
+function kebabToComponentName(str: string): string {
+  return capitalizeFirstLetter(kebabToCamel(str));
+}
+
 async function generateIconComponents() {
   try {
     const svgFiles = await glob("src/**/*.svg");
@@ -33,15 +43,15 @@ async function generateIconComponents() {
     for (const file of svgFiles) {
       const svg = await fs.readFile(file, "utf8");
       const pathParts = file.split(path.sep);
-      const styleFolder = pathParts[1]; // 改名为styleFolder避免与style属性冲突
+      const styleFolder = pathParts[1]; // 风格文件夹
       const fileName = pathParts[2];
 
-      // 假设文件名已经是小驼峰格式 (例如 returnArrow.svg)
-      const baseName = path.parse(fileName).name;
+      // 假设文件名是中横线格式 (例如 return-arrow.svg)
+      const kebabName = path.parse(fileName).name;
 
       // 组件名称需要首字母大写的驼峰 + 风格后缀
-      const componentName = `${capitalizeFirstLetter(
-        baseName
+      const componentName = `${kebabToComponentName(
+        kebabName
       )}${capitalizeFirstLetter(styleFolder)}`;
 
       // 处理 SVG - 传递样式
@@ -160,7 +170,7 @@ async function generateIconComponents() {
       iconSets.push({
         name: componentName,
         style: styleFolder,
-        baseName,
+        kebabName,
       });
     }
 
@@ -200,7 +210,7 @@ async function generateEntryFiles(iconSets: IconSet[]) {
 async function generateJsVersion(svgFiles: string[]) {
   interface IconSet {
     [style: string]: {
-      [name: string]: string;
+      [kebabName: string]: string; // 直接使用中横线名称作为键
     };
   }
 
@@ -224,11 +234,11 @@ async function generateJsVersion(svgFiles: string[]) {
     const style = pathParts[1];
     const fileName = pathParts[2];
 
-    // 获取小驼峰格式的基础名称，用作图标的键
-    const baseName = path.parse(fileName).name;
+    // 直接使用中横线格式的文件名
+    const kebabName = path.parse(fileName).name;
 
     const processedSvg = processSvg(svg, style); // 传递样式参数
-    icons[style][baseName] = processedSvg;
+    icons[style][kebabName] = processedSvg;
   }
 
   const jsContent = `
@@ -267,7 +277,7 @@ async function generateJsVersion(svgFiles: string[]) {
         secondaryColor
       } = options;
 
-      // 直接使用传入的小驼峰名称，不做额外处理
+      // 直接使用中横线格式名称
       const iconName = name;
       const iconSet = icons[style as keyof typeof icons];
       const svg = iconSet?.[iconName];
@@ -319,6 +329,7 @@ async function generateJsVersion(svgFiles: string[]) {
     }
     
     export function getAllIconNames(style: IconStyle = 'outline'): string[] {
+      // 直接返回中横线格式的名称
       return Object.keys(icons[style]);
     }
     

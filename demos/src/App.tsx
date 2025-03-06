@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import IconList from "./components/IconList";
 import IconUsage from "./components/IconUsage";
+import NamingConvention from "./components/NamingConvention";
 
 function App() {
   const [activeTab, setActiveTab] = useState<"outline" | "solid" | "default">(
@@ -20,8 +21,11 @@ function App() {
           </p>
         </div>
 
+        {/* 命名约定说明 */}
+        <NamingConvention />
+
         {/* 标签切换 */}
-        <div className="mt-12 mb-8 border-b border-gray-200">
+        <div className="mt-8 mb-8 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8 justify-center">
             <button
               onClick={() => setActiveTab("outline")}

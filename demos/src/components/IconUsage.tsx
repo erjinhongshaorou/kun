@@ -9,14 +9,18 @@ interface IconUsageProps {
 }
 
 export default function IconUsage({ activeStyle }: IconUsageProps) {
-  const [availableIcon, setAvailableIcon] = useState<string>("birthday");
+  // 存储中横线格式的图标名
+  const [iconKebabName, setIconKebabName] = useState<string>("");
+  // 存储对应的 React 组件名
+  const [componentName, setComponentName] = useState<string>("");
+  // 存储 React 组件
   const [IconComponent, setIconComponent] =
     useState<React.ComponentType<any> | null>(null);
   const initialRenderRef = useRef(true);
   const jsHoverContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 获取当前风格下的第一个可用图标
+    // 获取当前风格下的图标
     findAvailableIcon(activeStyle);
   }, [activeStyle]);
 
@@ -35,7 +39,11 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
 
   // 初始化JS版本的hover效果 (仅用于default风格)
   useEffect(() => {
-    if (activeStyle === "default" && jsHoverContainerRef.current) {
+    if (
+      activeStyle === "default" &&
+      jsHoverContainerRef.current &&
+      iconKebabName
+    ) {
       const container = jsHoverContainerRef.current;
 
       // 为JS hover容器添加鼠标事件
@@ -47,12 +55,12 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
         container.removeEventListener("mouseleave", handleJsHoverLeave);
       };
     }
-  }, [availableIcon, activeStyle]);
+  }, [iconKebabName, activeStyle]);
 
   // JS hover效果的处理函数
   const handleJsHoverEnter = () => {
-    if (jsHoverContainerRef.current) {
-      const hoverIcon = getIcon(availableIcon, {
+    if (jsHoverContainerRef.current && iconKebabName) {
+      const hoverIcon = getIcon(iconKebabName, {
         style: activeStyle as any,
         size: 32,
         color: "#22c55e", // 悬停时的绿色
@@ -65,8 +73,8 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
   };
 
   const handleJsHoverLeave = () => {
-    if (jsHoverContainerRef.current) {
-      const normalIcon = getIcon(availableIcon, {
+    if (jsHoverContainerRef.current && iconKebabName) {
+      const normalIcon = getIcon(iconKebabName, {
         style: activeStyle as any,
         size: 32,
         color: "#6b7280", // 默认灰色
@@ -80,10 +88,9 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
 
   // 根据当前风格找到一个可用的图标
   const findAvailableIcon = (style: string) => {
-    let iconNames;
     let iconComponents;
 
-    // 获取当前风格的所有图标
+    // 获取当前风格的所有图标组件
     switch (style) {
       case "outline":
         iconComponents = OutlineIcons;
@@ -98,38 +105,38 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
         iconComponents = OutlineIcons;
     }
 
-    // 从JS API获取所有图标名称
+    // 从JS API获取所有中横线格式图标名
     try {
-      iconNames = getAllIconNames(style as any);
+      const kebabNames = getAllIconNames(style as any);
+
+      // 如果有可用图标
+      if (kebabNames && kebabNames.length > 0) {
+        // 使用第一个中横线格式图标名
+        const firstKebabName = kebabNames[0];
+        setIconKebabName(firstKebabName);
+
+        // 查找对应的React组件
+        const componentEntries = Object.entries(iconComponents);
+        if (componentEntries.length > 0) {
+          // 获取第一个组件并保存其名称
+          const [compName, Component] = componentEntries[0];
+          setComponentName(compName);
+          setIconComponent(() => Component as React.ComponentType<any>);
+        }
+
+        // 更新JS示例
+        generateJsExamples(style, firstKebabName);
+      }
     } catch (e) {
       console.error("获取图标名称失败", e);
-      iconNames = [];
-    }
-
-    // 如果有可用图标
-    if (iconNames && iconNames.length > 0) {
-      // 取第一个图标名称 (去掉首字母大写)
-      const iconBaseName =
-        iconNames[0].charAt(0).toLowerCase() + iconNames[0].slice(1);
-      setAvailableIcon(iconBaseName);
-
-      // 查找对应的React组件
-      const componentEntries = Object.entries(iconComponents);
-      if (componentEntries.length > 0) {
-        const [, Component] = componentEntries[0];
-        setIconComponent(() => Component as React.ComponentType<any>);
-      }
-
-      // 更新JS示例
-      generateJsExamples(style, iconBaseName);
     }
   };
 
-  const generateJsExamples = (style: string, iconName: string) => {
+  const generateJsExamples = (style: string, kebabName: string) => {
     // 确保元素存在后再操作
     setTimeout(() => {
       // 基础用法 - 尺寸调大到 32px
-      const basicIcon = getIcon(iconName, {
+      const basicIcon = getIcon(kebabName, {
         style: style as any,
         size: 32,
       });
@@ -138,7 +145,7 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
       }
 
       // 自定义大小 - 尺寸调大到 48px
-      const largeIcon = getIcon(iconName, {
+      const largeIcon = getIcon(kebabName, {
         style: style as any,
         size: 48,
       });
@@ -147,7 +154,7 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
       }
 
       // 自定义颜色 - 尺寸调大到 32px
-      const colorIcon = getIcon(iconName, {
+      const colorIcon = getIcon(kebabName, {
         style: style as any,
         size: 32,
         color: "#ef4444",
@@ -157,7 +164,7 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
       }
 
       // 默认颜色变量 - 尺寸调大到 32px
-      const defaultColorIcon = getIcon(iconName, {
+      const defaultColorIcon = getIcon(kebabName, {
         style: style as any,
         size: 32,
         defaultColor: "#3b82f6",
@@ -168,7 +175,7 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
       }
 
       // 第二颜色变量 - 尺寸调大到 32px
-      const secondColorIcon = getIcon(iconName, {
+      const secondColorIcon = getIcon(kebabName, {
         style: style as any,
         size: 32,
         secondaryColor: "#22c55e",
@@ -180,7 +187,7 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
 
       // Hover效果的初始图标 (仅用于default风格)
       if (style === "default" && jsHoverContainerRef.current) {
-        const hoverIcon = getIcon(iconName, {
+        const hoverIcon = getIcon(kebabName, {
           style: style as any,
           size: 32,
           color: "#6b7280", // 默认灰色
@@ -223,8 +230,9 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
                 <IconComponent size={32} />
               </div>
               <div className="ml-6 flex-1">
+                <div className="mb-1 text-xs text-blue-500">React 组件</div>
                 <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-normal break-all">
-                  {`<${IconComponent.displayName} />`}
+                  {`<${componentName} />`}
                 </code>
               </div>
             </div>
@@ -233,8 +241,9 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
                 <div id="basic-js"></div>
               </div>
               <div className="ml-6 flex-1">
+                <div className="mb-1 text-xs text-blue-500">JS API</div>
                 <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-normal break-all">
-                  {`getIcon('${availableIcon}', { style: '${activeStyle}' })`}
+                  {`getIcon('${iconKebabName}', { style: '${activeStyle}' })`}
                 </code>
               </div>
             </div>
@@ -252,8 +261,9 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
                 <IconComponent size={48} />
               </div>
               <div className="ml-6 flex-1">
+                <div className="mb-1 text-xs text-blue-500">React 组件</div>
                 <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-normal break-all">
-                  {`<${IconComponent.displayName} size={48} />`}
+                  {`<${componentName} size={48} />`}
                 </code>
               </div>
             </div>
@@ -262,8 +272,9 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
                 <div id="large-js"></div>
               </div>
               <div className="ml-6 flex-1">
+                <div className="mb-1 text-xs text-blue-500">JS API</div>
                 <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-normal break-all">
-                  {`getIcon('${availableIcon}', { style: '${activeStyle}', size: 48 })`}
+                  {`getIcon('${iconKebabName}', { style: '${activeStyle}', size: 48 })`}
                 </code>
               </div>
             </div>
@@ -285,8 +296,9 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
                   />
                 </div>
                 <div className="ml-6 flex-1">
+                  <div className="mb-1 text-xs text-blue-500">React 组件</div>
                   <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
-                    {`<${IconComponent.displayName} 
+                    {`<${componentName} 
   size={32}
   className="text-gray-500 hover:text-green-500 
     transition-colors duration-200 cursor-pointer"
@@ -302,10 +314,11 @@ export default function IconUsage({ activeStyle }: IconUsageProps) {
                   {/* JS hover图标通过引用添加 */}
                 </div>
                 <div className="ml-6 flex-1">
+                  <div className="mb-1 text-xs text-blue-500">JS API</div>
                   <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
                     {`// 添加鼠标事件处理
 el.addEventListener('mouseenter', () => {
-  el.innerHTML = getIcon('${availableIcon}', {
+  el.innerHTML = getIcon('${iconKebabName}', {
     style: '${activeStyle}',
     size: 32,
     color: '#22c55e'  // 绿色
@@ -313,7 +326,7 @@ el.addEventListener('mouseenter', () => {
 });
 
 el.addEventListener('mouseleave', () => {
-  el.innerHTML = getIcon('${availableIcon}', {
+  el.innerHTML = getIcon('${iconKebabName}', {
     style: '${activeStyle}',
     size: 32,
     color: '#6b7280'  // 灰色
@@ -337,8 +350,9 @@ el.addEventListener('mouseleave', () => {
                 <IconComponent size={32} />
               </div>
               <div className="ml-6 flex-1">
+                <div className="mb-1 text-xs text-blue-500">React 组件</div>
                 <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
-                  {`<div className="text-red-500">\n  <${IconComponent.displayName} size={32} />\n</div>`}
+                  {`<div className="text-red-500">\n  <${componentName} size={32} />\n</div>`}
                 </code>
               </div>
             </div>
@@ -347,8 +361,12 @@ el.addEventListener('mouseleave', () => {
                 <div id="color-js"></div>
               </div>
               <div className="ml-6 flex-1">
+                <div className="mb-1 text-xs text-blue-500">JS API</div>
                 <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
-                  {`getIcon('${availableIcon}', {\n  style: '${activeStyle}',\n  color: '#ef4444'\n})`}
+                  {`getIcon('${iconKebabName}', {
+  style: '${activeStyle}',
+  color: '#ef4444'
+})`}
                 </code>
               </div>
             </div>
@@ -374,8 +392,14 @@ el.addEventListener('mouseleave', () => {
                   />
                 </div>
                 <div className="ml-6 flex-1">
+                  <div className="mb-1 text-xs text-blue-500">React 组件</div>
                   <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
-                    {`<${IconComponent.displayName}\n  size={32}\n  style={{\n    '--ll-svg-default-color': '#ef4444'\n  }}\n/>`}
+                    {`<${componentName}
+  size={32}
+  style={{
+    '--ll-svg-default-color': '#ef4444'
+  }}
+/>`}
                   </code>
                 </div>
               </div>
@@ -384,8 +408,12 @@ el.addEventListener('mouseleave', () => {
                   <div id="default-color-js"></div>
                 </div>
                 <div className="ml-6 flex-1">
+                  <div className="mb-1 text-xs text-blue-500">JS API</div>
                   <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
-                    {`getIcon('${availableIcon}', {\n  style: '${activeStyle}',\n  defaultColor: '#3b82f6'\n})`}
+                    {`getIcon('${iconKebabName}', {
+  style: '${activeStyle}',
+  defaultColor: '#3b82f6'
+})`}
                   </code>
                 </div>
               </div>
@@ -412,8 +440,14 @@ el.addEventListener('mouseleave', () => {
                   />
                 </div>
                 <div className="ml-6 flex-1">
+                  <div className="mb-1 text-xs text-blue-500">React 组件</div>
                   <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
-                    {`<${IconComponent.displayName}\n  size={32}\n  style={{\n    '--ll-svg-second-color': '#22c55e'\n  }}\n/>`}
+                    {`<${componentName}
+  size={32}
+  style={{
+    '--ll-svg-second-color': '#22c55e'
+  }}
+/>`}
                   </code>
                 </div>
               </div>
@@ -422,8 +456,12 @@ el.addEventListener('mouseleave', () => {
                   <div id="second-color-js"></div>
                 </div>
                 <div className="ml-6 flex-1">
+                  <div className="mb-1 text-xs text-blue-500">JS API</div>
                   <code className="rounded bg-gray-100 px-3 py-2 text-sm block overflow-x-auto whitespace-pre">
-                    {`getIcon('${availableIcon}', {\n  style: '${activeStyle}',\n  secondaryColor: '#22c55e'\n})`}
+                    {`getIcon('${iconKebabName}', {
+  style: '${activeStyle}',
+  secondaryColor: '#22c55e'
+})`}
                   </code>
                 </div>
               </div>

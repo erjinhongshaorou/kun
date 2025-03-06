@@ -2,22 +2,26 @@ import React, { useEffect, useState } from "react";
 import * as OutlineIcons from "@hashcoop/icons/outline";
 import * as SolidIcons from "@hashcoop/icons/solid";
 import * as DefaultIcons from "@hashcoop/icons/default";
-import { getIcon } from "@hashcoop/icons/js";
+import { getIcon, getAllIconNames } from "@hashcoop/icons/js";
 
 interface IconStyle {
-  name: string;
+  name: string; // React 组件名 (PascalCase)
   ReactComponent: React.ComponentType<any>;
-  jsName: string;
+  kebabName: string; // 中横线格式名 (kebab-case)
 }
 
 interface IconListProps {
   activeTab: "outline" | "solid" | "default";
 }
 
-// 首字母小写
-function lowerFirstLetter(str: string): string {
-  return str.charAt(0).toLowerCase() + str.slice(1);
+// 将 PascalCase 转换为 kebab-case
+function pascalToKebab(str: string): string {
+  // 先去掉风格后缀
+  const baseName = str.replace(/(Outline|Solid|Default)$/, "");
+  // 然后转换为 kebab-case
+  return baseName.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 }
+
 export default function IconList({ activeTab }: IconListProps) {
   const [icons, setIcons] = useState<IconStyle[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,16 +41,16 @@ export default function IconList({ activeTab }: IconListProps) {
         break;
     }
 
+    // 映射组件与中横线名称
     const availableIcons = Object.entries(currentIcons).map(
       ([name, Component]) => {
-        // 提取基本名称（去掉样式后缀）
-        const baseName = lowerFirstLetter(
-          name.replace(/(Outline|Solid|Default)$/, "")
-        );
+        // 从组件名转换获取中横线格式名
+        const kebabName = pascalToKebab(name);
+
         return {
           name,
           ReactComponent: Component as React.ComponentType<any>,
-          jsName: baseName,
+          kebabName,
         };
       }
     );
@@ -60,8 +64,10 @@ export default function IconList({ activeTab }: IconListProps) {
   // 当搜索词或图标列表变化时过滤图标
   useEffect(() => {
     const filtered = searchTerm
-      ? icons.filter((icon) =>
-          icon.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ? icons.filter(
+          (icon) =>
+            icon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            icon.kebabName.includes(searchTerm.toLowerCase())
         )
       : icons;
 
@@ -96,8 +102,8 @@ export default function IconList({ activeTab }: IconListProps) {
         }
       }
 
-      const jsIcon = getIcon(icon.jsName, iconParams);
-      const container = document.getElementById(`js-${icon.jsName}`);
+      const jsIcon = getIcon(icon.kebabName, iconParams);
+      const container = document.getElementById(`js-${icon.kebabName}`);
       if (container && jsIcon) {
         container.innerHTML = jsIcon;
       }
@@ -128,9 +134,12 @@ export default function IconList({ activeTab }: IconListProps) {
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
         {/* React 组件版本 */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
             React Components
           </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            使用 PascalCase 命名的 React 组件
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredIcons.map((icon) => (
               <div
@@ -148,6 +157,9 @@ export default function IconList({ activeTab }: IconListProps) {
                 <span className="mt-2 text-xs text-gray-500 text-center break-words w-full">
                   {icon.name}
                 </span>
+                <span className="mt-1 text-xs text-blue-400 text-center break-words w-full">
+                  {icon.kebabName}
+                </span>
               </div>
             ))}
           </div>
@@ -155,20 +167,23 @@ export default function IconList({ activeTab }: IconListProps) {
 
         {/* JS API 版本 */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
             JavaScript API
           </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            使用 kebab-case 中横线格式的 JS 图标
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredIcons.map((icon) => (
               <div
-                key={`js-box-${icon.jsName}`}
+                key={`js-box-${icon.kebabName}`}
                 className="flex flex-col items-center p-4 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:shadow-md transition-all duration-200 min-w-[120px] min-h-[120px]"
               >
                 <div className="flex items-center justify-center h-[40px]">
-                  <div id={`js-${icon.jsName}`}></div>
+                  <div id={`js-${icon.kebabName}`}></div>
                 </div>
-                <span className="mt-2 text-xs text-gray-500 text-center break-words w-full">
-                  {icon.jsName}
+                <span className="mt-2 text-xs font-medium text-blue-500 text-center break-words w-full">
+                  {icon.kebabName}
                 </span>
               </div>
             ))}
