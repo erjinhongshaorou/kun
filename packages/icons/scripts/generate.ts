@@ -14,9 +14,11 @@ function camelCaseAttributes(svg: string): string {
     .replace(/fill-rule/g, "fillRule")
     .replace(/clip-rule/g, "clipRule")
     .replace(/clip-path/g, "clipPath")
+    .replace(/stop-color/g, "stopColor")
     .replace(/stroke-linecap/g, "strokeLinecap")
     .replace(/stroke-linejoin/g, "strokeLinejoin")
     .replace(/stroke-width/g, "strokeWidth")
+    .replace(/stroke-dasharray/g, "strokeDasharray")
     .replace(/stroke-miterlimit/g, "strokeMiterlimit");
 }
 
