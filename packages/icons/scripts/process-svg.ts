@@ -10,7 +10,7 @@ const STYLE_COLOR_MAPPINGS = {
   // outline 和 solid 风格的颜色映射
   standard: {
     "#000000": "var(--ll-svg-default-color)",
-    black: "var(--ll-svg-default-color)", // 添加对 black 的支持
+    // black: "var(--ll-svg-default-color)", // 添加对 black 的支持
     "#007BFE": "currentColor",
     "#EEF1FB": "var(--ll-svg-second-color)",
   } as ColorMap,
@@ -18,7 +18,7 @@ const STYLE_COLOR_MAPPINGS = {
   // default 风格的颜色映射
   default: {
     "#000000": "currentColor", // default 风格下黑色映射到 currentColor
-    black: "currentColor", // 添加对 black 的支持
+    // black: "currentColor", // 添加对 black 的支持
   } as ColorMap,
 };
 
