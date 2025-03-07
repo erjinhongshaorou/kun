@@ -79,7 +79,13 @@ function createOptimizeConfig(style: string): Config {
 
 // 导出处理 SVG 的函数
 export function processSvg(svg: string, style: string = "outline"): string {
-  const optimizeConfig = createOptimizeConfig(style);
-  const optimizedSvg = optimize(svg, optimizeConfig);
-  return optimizedSvg.data;
+  try {
+    const optimizeConfig = createOptimizeConfig(style);
+    const optimizedSvg = optimize(svg, optimizeConfig);
+    return optimizedSvg.data;
+  } catch (error) {
+    console.error("Error optimizing SVG:", error);
+    // 如果优化失败，返回原始SVG，但移除宽度和高度属性
+    return svg.replace(/width="[^"]*"/g, "").replace(/height="[^"]*"/g, "");
+  }
 }

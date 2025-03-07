@@ -19,7 +19,40 @@ function camelCaseAttributes(svg: string): string {
     .replace(/stroke-linejoin/g, "strokeLinejoin")
     .replace(/stroke-width/g, "strokeWidth")
     .replace(/stroke-dasharray/g, "strokeDasharray")
-    .replace(/stroke-miterlimit/g, "strokeMiterlimit");
+    .replace(/stroke-miterlimit/g, "strokeMiterlimit")
+    .replace(/fill-opacity/g, "fillOpacity")
+    .replace(/flood-opacity/g, "floodOpacity")
+    .replace(/stop-opacity/g, "stopOpacity")
+    .replace(/color-interpolation-filters/g, "colorInterpolationFilters")
+    .replace(/stroke-opacity/g, "strokeOpacity")
+    .replace(/mask-type/g, "maskType")
+    .replace(/flood-color/g, "floodColor")
+    .replace(/font-family/g, "fontFamily")
+    .replace(/font-size/g, "fontSize")
+    .replace(/font-style/g, "fontStyle")
+    .replace(/font-weight/g, "fontWeight")
+    .replace(/text-anchor/g, "textAnchor")
+    .replace(/dominant-baseline/g, "dominantBaseline")
+    .replace(/mask-units/g, "maskUnits")
+    .replace(/style="([^"]*)"/g, (match, styleString) => {
+      // 将style字符串转换为对象字符串
+      if (!styleString) return "style={{}}";
+
+      const styleObj = styleString
+        .split(";")
+        .filter((s) => s.trim())
+        .map((s) => {
+          const [key, value] = s.split(":").map((part) => part.trim());
+          // 转换key为驼峰命名
+          const camelKey = key.replace(/-([a-z])/g, (_, char) =>
+            char.toUpperCase()
+          );
+          return `"${camelKey}":"${value}"`;
+        })
+        .join(",");
+
+      return `style={{${styleObj}}}`;
+    });
 }
 
 // 确保首字母大写 - 用于组件名称
@@ -42,6 +75,25 @@ async function generateIconComponents() {
     const svgFiles = await glob("src/**/*.svg");
     const iconSets: IconSet[] = [];
 
+    // 定义复杂SVG文件列表
+    const complexSvgFiles = [
+      "gold.svg",
+      "platinum.svg",
+      "diamond.svg",
+      "silver.svg",
+      "bronze.svg",
+      "glowingTrophy.svg",
+      "tallGlowingTrophy.svg",
+      "starTrophy.svg",
+      "diamondTrophy.svg",
+      "trophyDefault.svg",
+      "standingTrophy.svg",
+      "badgeMedal.svg",
+      "corsageMedal.svg",
+      "halterMedal.svg",
+      "starMedal.svg",
+    ];
+
     for (const file of svgFiles) {
       const svg = await fs.readFile(file, "utf8");
       const pathParts = file.split(path.sep);
@@ -56,8 +108,45 @@ async function generateIconComponents() {
         kebabName
       )}${capitalizeFirstLetter(styleFolder)}`;
 
+      // 检查是否为复杂SVG
+      const isComplexSvg = complexSvgFiles.some(
+        (complexFile) => fileName.toLowerCase() === complexFile.toLowerCase()
+      );
+
       // 处理 SVG - 传递样式
-      let processedSvg = processSvg(svg, styleFolder);
+      let processedSvg;
+      if (isComplexSvg) {
+        // 对于复杂SVG，只进行最基本的处理
+        processedSvg = svg
+          .replace(/<svg([^>]*)>/, `<svg$1>`)
+          .replace(/width="[^"]*"/, "")
+          .replace(/height="[^"]*"/, "")
+          // 确保所有mask-type属性都转换为maskType
+          .replace(/mask-type/g, "maskType")
+          // 确保所有style属性都转换为React风格的对象
+          .replace(/style="([^"]*)"/g, (match, styleString) => {
+            if (!styleString) return "";
+
+            const styleObj = styleString
+              .split(";")
+              .filter((s) => s.trim())
+              .map((s) => {
+                const [key, value] = s.split(":").map((part) => part.trim());
+                // 转换key为驼峰命名
+                const camelKey = key.replace(/-([a-z])/g, (_, char) =>
+                  char.toUpperCase()
+                );
+                return `"${camelKey}":"${value}"`;
+              })
+              .join(",");
+
+            return `style={{${styleObj}}}`;
+          });
+      } else {
+        // 对于普通SVG，进行完整处理
+        processedSvg = processSvg(svg, styleFolder);
+      }
+
       // 转换属性为驼峰形式
       processedSvg = camelCaseAttributes(processedSvg);
 
@@ -72,7 +161,49 @@ async function generateIconComponents() {
       // 针对不同风格生成不同的组件代码
       let componentCode;
 
-      if (styleFolder === "default") {
+      if (isComplexSvg) {
+        // 对于复杂SVG，使用一个特殊的模板，不使用style属性
+        processedSvg = processedSvg.replace(
+          /<svg([^>]*)>/,
+          `<svg$1
+          ref={ref}
+          width={size}
+          height={size}
+          className={className}
+          {...props}>`
+        );
+
+        componentCode = `
+        import React, { forwardRef, memo } from 'react'
+        import type { SVGProps } from 'react'
+
+        interface IconProps extends SVGProps<SVGSVGElement> {
+          size?: number | string
+          className?: string
+          title?: string
+        }
+
+        const ${componentName} = memo(forwardRef<SVGSVGElement, IconProps>(({
+          size = 24,
+          className = '',
+          title,
+          ...props
+        }, ref) => {
+          const titleId = title ? \`title-\${Math.random().toString(36).substr(2, 9)}\` : undefined;
+          
+          return (
+            ${processedSvg.replace(
+              "</svg>",
+              "  {title ? <title id={titleId}>{title}</title> : null}\n    </svg>"
+            )}
+          )
+        }));
+
+        ${componentName}.displayName = '${componentName}'
+
+        export default ${componentName}
+        `;
+      } else if (styleFolder === "default") {
         // default 风格使用直接的样式传递，不设置 CSS 变量
         processedSvg = processedSvg.replace(
           /<svg([^>]*)>/,
@@ -99,8 +230,8 @@ async function generateIconComponents() {
         }, ref) => {
           const titleId = title ? \`title-\${Math.random().toString(36).substr(2, 9)}\` : undefined;
           
-          // 直接使用传入的样式，不添加 CSS 变量
-          const componentStyle = style;
+          // 直接使用传入的样式，不添加 CSS 变量，但需要类型转换
+          const componentStyle = style as React.CSSProperties;
           
           return (
             ${processedSvg.replace(
