@@ -9,6 +9,13 @@ interface IconSet {
   kebabName: string; // 中横线格式名称
 }
 
+// 添加对图片的支持
+interface ImageSet {
+  name: string;
+  fileName: string;
+  filePath: string;
+}
+
 function camelCaseAttributes(svg: string): string {
   return svg
     .replace(/fill-rule/g, "fillRule")
@@ -73,7 +80,11 @@ function kebabToComponentName(str: string): string {
 async function generateIconComponents() {
   try {
     const svgFiles = await glob("src/**/*.svg");
+    // 添加对图片文件的支持
+    const imageFiles = await glob("src/images/**/*.{png,jpg,jpeg,gif,webp}");
+
     const iconSets: IconSet[] = [];
+    const imageSets: ImageSet[] = [];
 
     // 定义复杂SVG文件列表
     const complexSvgFiles = [
@@ -94,6 +105,76 @@ async function generateIconComponents() {
       "starMedal.svg",
     ];
 
+    // 处理图片文件
+    for (const file of imageFiles) {
+      const fileName = path.basename(file);
+      const kebabName = path.parse(fileName).name;
+
+      // 组件名称使用首字母大写的驼峰
+      const componentName = `${kebabToComponentName(kebabName)}Image`;
+
+      // 将图片复制到构建目录
+      const buildImageDir = `build/images`;
+      const destImagePath = path.join(buildImageDir, fileName);
+
+      await fs.mkdir(buildImageDir, { recursive: true });
+      await fs.copyFile(file, destImagePath);
+
+      // 生成图片组件代码
+      const imageComponentCode = `
+      import React, { forwardRef, memo } from 'react'
+      
+      interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+        size?: number | string
+        className?: string
+      }
+      
+      const ${componentName} = memo(forwardRef<HTMLImageElement, ImageProps>(({
+        size = 24,
+        className = '',
+        alt = "${kebabName}",
+        ...props
+      }, ref) => {
+        // 计算宽高样式
+        const style = {
+          width: typeof size === 'number' ? \`\${size}px\` : size,
+          height: typeof size === 'number' ? \`\${size}px\` : size,
+          ...props.style
+        };
+        
+        return (
+          <img
+            ref={ref}
+            src={\`/images/${fileName}\`}
+            alt={alt}
+            className={className}
+            style={style}
+            {...props}
+          />
+        )
+      }));
+      
+      ${componentName}.displayName = '${componentName}'
+      
+      export default ${componentName}
+      `;
+
+      // 保存组件文件
+      const componentDir = `build/components/images`;
+      await fs.mkdir(componentDir, { recursive: true });
+      await fs.writeFile(
+        path.join(componentDir, `${componentName}.tsx`),
+        imageComponentCode
+      );
+
+      imageSets.push({
+        name: componentName,
+        fileName,
+        filePath: file,
+      });
+    }
+
+    // 处理SVG文件 (现有代码)
     for (const file of svgFiles) {
       const svg = await fs.readFile(file, "utf8");
       const pathParts = file.split(path.sep);
@@ -307,12 +388,105 @@ async function generateIconComponents() {
       });
     }
 
+    // 生成图片入口文件
+    await generateImageEntryFiles(imageSets);
+
+    // 生成JS版本的图片使用API
+    await generateJsImagesVersion(imageFiles);
+
     await generateEntryFiles(iconSets);
     await generateJsVersion(svgFiles);
+
+    // 生成主入口文件
+    await generateMainEntryFile(iconSets, imageSets);
   } catch (error) {
     console.error("Error generating components:", error);
     process.exit(1);
   }
+}
+
+// 生成图片入口文件
+async function generateImageEntryFiles(imageSets: ImageSet[]) {
+  const entryContent = imageSets
+    .map(
+      ({ name }) =>
+        `export { default as ${name} } from '../components/images/${name}';`
+    )
+    .join("\n");
+
+  const entryDir = `build/images`;
+  await fs.mkdir(entryDir, { recursive: true });
+  await fs.writeFile(`${entryDir}/index.ts`, entryContent);
+}
+
+// 生成JS版本的图片使用API
+async function generateJsImagesVersion(imageFiles: string[]) {
+  const images: Record<string, string> = {};
+
+  for (const file of imageFiles) {
+    const fileName = path.basename(file);
+    const kebabName = path.parse(fileName).name;
+
+    // 存储图片文件名，将在运行时使用Vite的资源导入功能
+    images[kebabName] = fileName;
+  }
+
+  const jsImageContent = `
+  export interface ImageOptions {
+    size?: number | string;
+    className?: string;
+    alt?: string;
+    style?: Record<string, string>;
+  }
+  
+  // 图片名称到文件名的映射
+  const imageMap: Record<string, string> = ${JSON.stringify(images)};
+  
+  // 获取所有可用的图片名称
+  export function getAllImageNames(): string[] {
+    return ${JSON.stringify(Object.keys(images))};
+  }
+  
+  // 创建图片HTML元素
+  export function getImage(name: string, options: ImageOptions = {}): HTMLImageElement | null {
+    const {
+      size = 24,
+      className = '',
+      alt = name,
+      style = {}
+    } = options;
+    
+    const imageFileName = imageMap[name];
+    
+    if (!imageFileName) {
+      console.warn(\`Image "\${name}" not found\`);
+      return null;
+    }
+    
+    const img = document.createElement('img');
+    // 使用Vite的公共目录（假设图片已被复制到public/images目录）
+    img.src = \`/images/\${imageFileName}\`;
+    img.alt = alt;
+    
+    if (className) {
+      img.className = className;
+    }
+    
+    // 设置尺寸
+    const sizeValue = typeof size === 'number' ? \`\${size}px\` : size;
+    img.style.width = sizeValue;
+    img.style.height = sizeValue;
+    
+    // 应用其他样式
+    Object.entries(style).forEach(([key, value]) => {
+      img.style[key as any] = value;
+    });
+    
+    return img;
+  }
+  `;
+
+  await fs.writeFile("build/images/js.ts", jsImageContent);
 }
 
 async function generateEntryFiles(iconSets: IconSet[]) {
@@ -470,6 +644,40 @@ async function generateJsVersion(svgFiles: string[]) {
   `;
 
   await fs.writeFile("build/js.ts", jsContent);
+}
+
+// 生成主入口文件，导出所有SVG图标和图片
+async function generateMainEntryFile(
+  iconSets: IconSet[],
+  imageSets: ImageSet[]
+) {
+  const svgExports = iconSets
+    .map(
+      ({ name, style }) =>
+        `export { default as ${name} } from './components/${style}/${name}';`
+    )
+    .join("\n");
+
+  const imageExports = imageSets
+    .map(
+      ({ name }) =>
+        `export { default as ${name} } from './components/images/${name}';`
+    )
+    .join("\n");
+
+  const entryContent = `
+  // SVG 图标导出
+  ${svgExports}
+  
+  // 图片导出
+  ${imageExports}
+  
+  // 导出JS版本
+  export * from './js';
+  export * from './images/js';
+  `;
+
+  await fs.writeFile(`build/index.ts`, entryContent);
 }
 
 // 执行生成

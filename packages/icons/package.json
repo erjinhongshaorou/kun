@@ -26,10 +26,20 @@
       "require": "./dist/cjs/default/index.js",
       "types": "./dist/types/default/index.d.ts"
     },
+    "./images": {
+      "import": "./dist/esm/images/index.js",
+      "require": "./dist/cjs/images/index.js",
+      "types": "./dist/types/images/index.d.ts"
+    },
     "./js": {
       "import": "./dist/esm/js.js",
       "require": "./dist/cjs/js.js",
       "types": "./dist/types/js.d.ts"
+    },
+    "./js/images": {
+      "import": "./dist/esm/images/js.js",
+      "require": "./dist/cjs/images/js.js",
+      "types": "./dist/types/images/js.d.ts"
     }
   },
   "publishConfig": {

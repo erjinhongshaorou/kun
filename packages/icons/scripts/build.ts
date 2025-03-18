@@ -1,10 +1,50 @@
 import { build } from "esbuild";
 import { glob } from "glob";
 import { dtsPlugin } from "esbuild-plugin-d.ts";
+import { promises as fs } from "fs";
+import path from "path";
 
 async function buildPackage() {
   try {
     const entryPoints = await glob("build/**/*.{ts,tsx}");
+
+    // 处理图片文件
+    const imageFiles = await glob("build/images/*.{png,jpg,jpeg,gif,webp}");
+
+    // 确保图片目录存在
+    await fs.mkdir("dist/esm/images", { recursive: true });
+    await fs.mkdir("dist/cjs/images", { recursive: true });
+
+    // 为demo应用创建图片目录
+    // Vite默认会从public目录复制静态资源
+    await fs
+      .mkdir("../../demos/public/images", { recursive: true })
+      .catch((err) => {
+        console.warn(
+          "Warning: Could not create demos/public/images directory:",
+          err
+        );
+      });
+
+    // 复制图片文件到dist目录和demo应用的public目录
+    for (const file of imageFiles) {
+      const fileName = path.basename(file);
+
+      // 复制到dist目录
+      await fs.copyFile(file, `dist/esm/images/${fileName}`);
+      await fs.copyFile(file, `dist/cjs/images/${fileName}`);
+
+      // 复制到demo应用的Vite public目录，这样可以通过/images/xxx.png访问
+      try {
+        await fs.copyFile(file, `../../demos/public/images/${fileName}`);
+        console.log(`Copied ${fileName} to demos/public/images/`);
+      } catch (err) {
+        console.warn(
+          `Warning: Could not copy ${fileName} to demos/public/images:`,
+          err
+        );
+      }
+    }
 
     // ESM 构建
     await build({
@@ -18,6 +58,15 @@ async function buildPackage() {
       bundle: true,
       splitting: true,
       minify: true,
+      loader: {
+        ".png": "file",
+        ".jpg": "file",
+        ".jpeg": "file",
+        ".gif": "file",
+        ".webp": "file",
+      },
+      // 图片输出到images目录
+      assetNames: "images/[name]-[hash]",
     });
 
     // CJS 构建
@@ -31,6 +80,15 @@ async function buildPackage() {
       external: ["react"],
       bundle: true,
       minify: true,
+      loader: {
+        ".png": "file",
+        ".jpg": "file",
+        ".jpeg": "file",
+        ".gif": "file",
+        ".webp": "file",
+      },
+      // 图片输出到images目录
+      assetNames: "images/[name]-[hash]",
     });
 
     // 单独生成类型定义文件
