@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import IconList from "./components/IconList";
 import IconUsage from "./components/IconUsage";
 import NamingConvention from "./components/NamingConvention";
+import ImageList from "./components/ImageList";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<"outline" | "solid" | "default">(
-    "outline"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "outline" | "solid" | "default" | "images"
+  >("outline");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -17,7 +18,7 @@ function App() {
             Hashcoop Icons
           </h1>
           <p className="mt-3 text-lg text-gray-500">
-            Beautiful hand-crafted SVG icons
+            Beautiful hand-crafted SVG icons and images
           </p>
         </div>
 
@@ -57,25 +58,48 @@ function App() {
             >
               Default
             </button>
+            <button
+              onClick={() => setActiveTab("images")}
+              className={`${
+                activeTab === "images"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              } pb-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Images
+            </button>
           </nav>
         </div>
 
-        {/* 图标列表展示 */}
-        <div className="mt-16">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            All {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Icons
-          </h2>
-          <IconList activeTab={activeTab} />
-        </div>
+        {/* 图标和图片展示区域 */}
+        {activeTab === "images" ? (
+          <div className="mt-16">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              All Images
+            </h2>
+            <ImageList />
+          </div>
+        ) : (
+          <>
+            {/* 图标列表展示 */}
+            <div className="mt-16">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                All {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}{" "}
+                Icons
+              </h2>
+              <IconList activeTab={activeTab} />
+            </div>
 
-        {/* 使用示例 */}
-        <div className="mt-10 mb-16">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Icon Usage Examples -{" "}
-            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Style
-          </h2>
-          <IconUsage activeStyle={activeTab} />
-        </div>
+            {/* 使用示例 */}
+            <div className="mt-10 mb-16">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Icon Usage Examples -{" "}
+                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Style
+              </h2>
+              <IconUsage activeStyle={activeTab} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

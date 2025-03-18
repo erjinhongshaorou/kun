@@ -11,7 +11,7 @@ interface IconStyle {
 }
 
 interface IconListProps {
-  activeTab: "outline" | "solid" | "default";
+  activeTab: "outline" | "solid" | "default" | "images";
 }
 
 // 将 PascalCase 转换为 kebab-case
