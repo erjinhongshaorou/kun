@@ -81,7 +81,7 @@ async function generateIconComponents() {
   try {
     const svgFiles = await glob("src/**/*.svg");
     // 添加对图片文件的支持
-    const imageFiles = await glob("src/images/**/*.{png,jpg,jpeg,gif,webp}");
+    const imageFiles = await glob("src/image/**/*.{png,jpg,jpeg,gif,webp}");
 
     const iconSets: IconSet[] = [];
     const imageSets: ImageSet[] = [];
@@ -114,7 +114,7 @@ async function generateIconComponents() {
       const componentName = `${kebabToComponentName(kebabName)}Image`;
 
       // 将图片复制到构建目录
-      const buildImageDir = `build/images`;
+      const buildImageDir = `build/image`;
       const destImagePath = path.join(buildImageDir, fileName);
 
       await fs.mkdir(buildImageDir, { recursive: true });
@@ -145,7 +145,7 @@ async function generateIconComponents() {
         return (
           <img
             ref={ref}
-            src={\`/images/${fileName}\`}
+            src={\`/image/${fileName}\`}
             alt={alt}
             className={className}
             style={style}
@@ -160,7 +160,7 @@ async function generateIconComponents() {
       `;
 
       // 保存组件文件
-      const componentDir = `build/components/images`;
+      const componentDir = `build/components/image`;
       await fs.mkdir(componentDir, { recursive: true });
       await fs.writeFile(
         path.join(componentDir, `${componentName}.tsx`),
@@ -410,11 +410,11 @@ async function generateImageEntryFiles(imageSets: ImageSet[]) {
   const entryContent = imageSets
     .map(
       ({ name }) =>
-        `export { default as ${name} } from '../components/images/${name}';`
+        `export { default as ${name} } from '../components/image/${name}';`
     )
     .join("\n");
 
-  const entryDir = `build/images`;
+  const entryDir = `build/image`;
   await fs.mkdir(entryDir, { recursive: true });
   await fs.writeFile(`${entryDir}/index.ts`, entryContent);
 }
@@ -474,8 +474,8 @@ async function generateJsImagesVersion(imageFiles: string[]) {
     }
     
     const img = document.createElement('img');
-    // 使用Vite的公共目录（假设图片已被复制到public/images目录）
-    img.src = \`/images/\${imageFileName}\`;
+    // 使用Vite的公共目录（假设图片已被复制到public/image目录）
+    img.src = \`/image/\${imageFileName}\`;
     img.alt = alt;
     
     if (className) {
@@ -496,7 +496,7 @@ async function generateJsImagesVersion(imageFiles: string[]) {
   }
   `;
 
-  await fs.writeFile("build/images/js.ts", jsImageContent);
+  await fs.writeFile("build/image/js.ts", jsImageContent);
 }
 
 async function generateEntryFiles(iconSets: IconSet[]) {
@@ -671,7 +671,7 @@ async function generateMainEntryFile(
   const imageExports = imageSets
     .map(
       ({ name }) =>
-        `export { default as ${name} } from './components/images/${name}';`
+        `export { default as ${name} } from './components/image/${name}';`
     )
     .join("\n");
 
@@ -684,7 +684,7 @@ async function generateMainEntryFile(
   
   // 导出JS版本
   export * from './js';
-  export * from './images/js';
+  export * from './image/js';
   `;
 
   await fs.writeFile(`build/index.ts`, entryContent);

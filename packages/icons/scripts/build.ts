@@ -9,19 +9,19 @@ async function buildPackage() {
     const entryPoints = await glob("build/**/*.{ts,tsx}");
 
     // 处理图片文件
-    const imageFiles = await glob("build/images/*.{png,jpg,jpeg,gif,webp}");
+    const imageFiles = await glob("build/image/*.{png,jpg,jpeg,gif,webp}");
 
     // 确保图片目录存在
-    await fs.mkdir("dist/esm/images", { recursive: true });
-    await fs.mkdir("dist/cjs/images", { recursive: true });
+    await fs.mkdir("dist/esm/image", { recursive: true });
+    await fs.mkdir("dist/cjs/image", { recursive: true });
 
     // 为demo应用创建图片目录
     // Vite默认会从public目录复制静态资源
     await fs
-      .mkdir("../../demos/public/images", { recursive: true })
+      .mkdir("../../demos/public/image", { recursive: true })
       .catch((err) => {
         console.warn(
-          "Warning: Could not create demos/public/images directory:",
+          "Warning: Could not create demos/public/image directory:",
           err
         );
       });
@@ -31,16 +31,16 @@ async function buildPackage() {
       const fileName = path.basename(file);
 
       // 复制到dist目录
-      await fs.copyFile(file, `dist/esm/images/${fileName}`);
-      await fs.copyFile(file, `dist/cjs/images/${fileName}`);
+      await fs.copyFile(file, `dist/esm/image/${fileName}`);
+      await fs.copyFile(file, `dist/cjs/image/${fileName}`);
 
-      // 复制到demo应用的Vite public目录，这样可以通过/images/xxx.png访问
+      // 复制到demo应用的Vite public目录，这样可以通过/image/xxx.png访问
       try {
-        await fs.copyFile(file, `../../demos/public/images/${fileName}`);
-        console.log(`Copied ${fileName} to demos/public/images/`);
+        await fs.copyFile(file, `../../demos/public/image/${fileName}`);
+        console.log(`Copied ${fileName} to demos/public/image/`);
       } catch (err) {
         console.warn(
-          `Warning: Could not copy ${fileName} to demos/public/images:`,
+          `Warning: Could not copy ${fileName} to demos/public/image:`,
           err
         );
       }
@@ -65,8 +65,8 @@ async function buildPackage() {
         ".gif": "file",
         ".webp": "file",
       },
-      // 图片输出到images目录
-      assetNames: "images/[name]-[hash]",
+      // 图片输出到image目录
+      assetNames: "image/[name]-[hash]",
     });
 
     // CJS 构建
@@ -87,8 +87,8 @@ async function buildPackage() {
         ".gif": "file",
         ".webp": "file",
       },
-      // 图片输出到images目录
-      assetNames: "images/[name]-[hash]",
+      // 图片输出到image目录
+      assetNames: "image/[name]-[hash]",
     });
 
     // 单独生成类型定义文件

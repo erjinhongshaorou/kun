@@ -1,6 +1,6 @@
 {
   "name": "@hashcoop/icons",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -26,20 +26,20 @@
       "require": "./dist/cjs/default/index.js",
       "types": "./dist/types/default/index.d.ts"
     },
-    "./images": {
-      "import": "./dist/esm/images/index.js",
-      "require": "./dist/cjs/images/index.js",
-      "types": "./dist/types/images/index.d.ts"
+    "./image": {
+      "import": "./dist/esm/image/index.js",
+      "require": "./dist/cjs/image/index.js",
+      "types": "./dist/types/image/index.d.ts"
     },
     "./js": {
       "import": "./dist/esm/js.js",
       "require": "./dist/cjs/js.js",
       "types": "./dist/types/js.d.ts"
     },
-    "./js/images": {
-      "import": "./dist/esm/images/js.js",
-      "require": "./dist/cjs/images/js.js",
-      "types": "./dist/types/images/js.d.ts"
+    "./js/image": {
+      "import": "./dist/esm/image/js.js",
+      "require": "./dist/cjs/image/js.js",
+      "types": "./dist/types/image/js.d.ts"
     }
   },
   "publishConfig": {
