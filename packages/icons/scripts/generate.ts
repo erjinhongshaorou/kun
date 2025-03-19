@@ -447,6 +447,16 @@ async function generateJsImagesVersion(imageFiles: string[]) {
     return ${JSON.stringify(Object.keys(images))};
   }
   
+  // 获取图片名称到文件名的映射
+  export function getAllImageFiles(): Record<string, string> {
+    return { ...imageMap };
+  }
+  
+  // 根据名称获取图片文件名
+  export function getImageFileName(name: string): string | null {
+    return imageMap[name] || null;
+  }
+  
   // 创建图片HTML元素
   export function getImage(name: string, options: ImageOptions = {}): HTMLImageElement | null {
     const {
