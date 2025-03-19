@@ -17,14 +17,14 @@ const transitionStyles = {
 
 function App() {
   const [activeTab, setActiveTab] = useState<
-    "outline" | "solid" | "default" | "images"
+    "outline" | "solid" | "default" | "image"
   >("outline");
   const [displayMode, setDisplayMode] = useState<"react" | "js">("js");
   const scrollPosRef = useRef<number>(0);
   const nodeRef = useRef(null); // Transition需要的ref
 
   // 处理标签切换，保存滚动位置
-  const handleTabChange = (tab: "outline" | "solid" | "default" | "images") => {
+  const handleTabChange = (tab: "outline" | "solid" | "default" | "image") => {
     // 保存当前滚动位置
     scrollPosRef.current = window.scrollY;
     setActiveTab(tab);
@@ -57,7 +57,7 @@ function App() {
             Hashcoop Icons
           </h1>
           <p className="mt-3 text-lg text-gray-500">
-            Beautiful hand-crafted SVG icons and images
+            Beautiful hand-crafted SVG icons and image
           </p>
         </div>
 
@@ -96,14 +96,14 @@ function App() {
                 Default
               </button>
               <button
-                onClick={() => handleTabChange("images")}
+                onClick={() => handleTabChange("image")}
                 className={`${
-                  activeTab === "images"
+                  activeTab === "image"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 } pb-4 px-1 border-b-2 font-medium text-sm`}
               >
-                Images
+                Image
               </button>
             </nav>
 
@@ -175,7 +175,7 @@ function App() {
               >
                 {/* 增加一个固定高度的容器，防止内容切换时位置跳动 */}
                 <div style={{ minHeight: "500px" }}>
-                  {activeTab === "images" ? (
+                  {activeTab === "image" ? (
                     <div>
                       <ImageList displayMode={displayMode} />
                     </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { getImage, getAllImageNames } from "@hashcoop/icons/js/images";
+import { getImage, getAllImageNames } from "@hashcoop/icons/js/image";
 import { Transition } from "react-transition-group";
 
 // 定义过渡动画的样式
@@ -23,7 +23,7 @@ function DynamicImage({
   size?: number;
 }) {
   // 使用传入的文件名（如果有），否则尝试使用name
-  const imageSrc = `/images/${fileName || name}`;
+  const imageSrc = `/image/${fileName || name}`;
 
   return (
     <img
@@ -197,7 +197,7 @@ export default function ImageList({
     return (
       <div className="text-center p-10 bg-white rounded-lg border border-gray-200">
         <p className="text-gray-500 mb-4">
-          没有找到图片。请将PNG、JPG等图片文件放入 packages/icons/src/images
+          没有找到图片。请将PNG、JPG等图片文件放入 packages/icons/src/image
           目录。
         </p>
         <div className="flex justify-center">
@@ -370,7 +370,7 @@ export default function ImageList({
               React Usage
             </h3>
             <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto flex-grow">
-              {`import { VipImage } from '@hashcoop/icons/images';
+              {`import { VipImage } from '@hashcoop/icons/image';
 
 function MyComponent() {
   return (
@@ -386,7 +386,7 @@ function MyComponent() {
 function SimpleImageComponent({ name, size = 64 }) {
   return (
     <img 
-      src={'/images/' + name + '.png'}
+      src={'/image/' + name + '.png'}
       alt={name}
       style={{ width: size + 'px', height: size + 'px' }}
       className="my-custom-class"
@@ -402,7 +402,7 @@ function SimpleImageComponent({ name, size = 64 }) {
               JavaScript Usage
             </h3>
             <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto flex-grow">
-              {`import { getImage, getAllImageNames } from '@hashcoop/icons/js/images';
+              {`import { getImage, getAllImageNames } from '@hashcoop/icons/js/image';
 
 // 获取所有可用图片名称
 const imageNames = getAllImageNames();
@@ -419,7 +419,7 @@ document.getElementById('container').appendChild(imgElement);
 
 // 另一种简单的方式
 const img = document.createElement('img');
-img.src = '/images/VIP.png';
+img.src = '/image/VIP.png';
 img.width = 64;
 img.height = 64;
 document.getElementById('container').appendChild(img);`}

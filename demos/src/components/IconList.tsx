@@ -12,7 +12,7 @@ interface IconStyle {
 }
 
 interface IconListProps {
-  activeTab: "outline" | "solid" | "default" | "images";
+  activeTab: "outline" | "solid" | "default" | "image";
   displayMode: "react" | "js";
 }
 
