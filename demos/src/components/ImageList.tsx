@@ -1,5 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
-import { getImage, getAllImageNames } from "@hashcoop/icons/js/image";
+import {
+  getImage,
+  getAllImageNames,
+  getImageUrl,
+  setBasePath,
+} from "@hashcoop/icons/js/image";
 import { Transition } from "react-transition-group";
 
 // 定义过渡动画的样式
@@ -22,7 +27,7 @@ function DynamicImage({
   fileName?: string;
   size?: number;
 }) {
-  // 使用传入的文件名（如果有），否则尝试使用name
+  // 在演示环境中，我们仍然可以使用公共路径下的图片
   const imageSrc = `/image/${fileName || name}`;
 
   return (
@@ -68,6 +73,10 @@ export default function ImageList({
   const [gridHeight, setGridHeight] = useState(350);
   const gridRef = useRef<HTMLDivElement>(null);
   const [dataFetched, setDataFetched] = useState(false);
+
+  // 添加 Transition 组件所需的 refs
+  const reactTransitionRef = useRef(null);
+  const jsTransitionRef = useRef(null);
 
   // 同步顶层displayMode状态
   useEffect(() => {
@@ -261,6 +270,7 @@ export default function ImageList({
         {/* 使用同一绝对定位层，确保内容在同一位置切换 */}
         <div style={{ position: "absolute", width: "100%", top: 0, left: 0 }}>
           <Transition
+            nodeRef={reactTransitionRef}
             in={displayMode === "react"}
             timeout={duration}
             mountOnEnter
@@ -268,6 +278,7 @@ export default function ImageList({
           >
             {(state) => (
               <div
+                ref={reactTransitionRef}
                 style={{
                   transition: `all ${duration}ms ease-in-out`,
                   ...transitionStyles[state],
@@ -317,6 +328,7 @@ export default function ImageList({
           </Transition>
 
           <Transition
+            nodeRef={jsTransitionRef}
             in={displayMode === "js"}
             timeout={duration}
             mountOnEnter
@@ -324,6 +336,7 @@ export default function ImageList({
           >
             {(state) => (
               <div
+                ref={jsTransitionRef}
                 style={{
                   transition: `all ${duration}ms ease-in-out`,
                   ...transitionStyles[state],
@@ -361,16 +374,213 @@ export default function ImageList({
       {/* 使用示例 */}
       <div className="mt-10">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
-          Usage Examples
+          使用示例和说明
         </h2>
+
+        {/* 基础路径设置说明 */}
+        <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <h3 className="text-md font-medium text-blue-800 mb-2">
+            ⚠️ 重要：在其他项目中使用时的配置
+          </h3>
+          <p className="text-sm text-blue-700 mb-2">
+            当您在外部项目中使用此图标库时，需要设置正确的基础路径才能正确加载图片。
+            有以下几种方式可以解决：
+          </p>
+          <ul className="list-disc list-inside text-sm text-blue-700 space-y-1">
+            <li>
+              使用 <code className="bg-blue-100 px-1 rounded">setBasePath</code>{" "}
+              函数设置图片基础路径。例如：
+              <pre className="mt-1 bg-blue-100 p-2 rounded text-xs">{`// 在应用的入口文件（如main.tsx或App.tsx）中：
+import { setBasePath } from '@hashcoop/icons/image';
+
+// 在应用初始化时调用一次
+setBasePath('/assets/images'); // 指向您项目中存放这些图片的目录`}</pre>
+            </li>
+            <li>
+              将图片文件复制到您项目的公共目录中（例如
+              public/image/），并确保可以通过 /image/ 路径访问。
+            </li>
+            <li>
+              如果使用CDN托管，可以设置为CDN路径：
+              <pre className="mt-1 bg-blue-100 p-2 rounded text-xs">{`setBasePath('https://cdn.example.com/assets/icons');`}</pre>
+            </li>
+          </ul>
+        </div>
+
+        {/* 通用图标组件示例 */}
+        <div className="mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
+          <h3 className="text-md font-medium text-green-800 mb-2">
+            📋 通用 Icon 组件示例
+          </h3>
+          <p className="text-sm text-green-700 mb-2">
+            以下是一个集成了所有图标类型（包括图片）的通用 Icon 组件示例：
+          </p>
+          <pre className="mt-1 bg-green-100 p-2 rounded text-xs overflow-auto">{`// 在应用入口文件中设置图片路径
+import { setBasePath } from '@hashcoop/icons/image';
+setBasePath('/assets/images'); // 指向存放图片的实际目录
+
+// Icon.tsx 组件
+import * as DefaultIcons from '@hashcoop/icons/default';
+import * as ImageIcons from '@hashcoop/icons/image';
+import * as OutlineIcons from '@hashcoop/icons/outline';
+import * as SolidIcons from '@hashcoop/icons/solid';
+import React from 'react';
+
+interface IconType {
+  name: string;   // 图标名称（kebab-case格式）
+  type: 'outline' | 'solid' | 'default' | 'image';
+  url?: string;   // 可选的自定义URL
+}
+
+interface IconProps {
+  icon: IconType;
+  size?: number | string;
+  className?: string;
+  [key: string]: any; // 其他所有属性
+}
+
+// 首字母大写
+function capitalizeFirstLetter(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// 将中横线格式转换为驼峰格式
+function kebabToCamel(str: string): string {
+  return str.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+}
+
+// 将中横线格式转换为组件名格式
+function kebabToComponentName(kebabName: string, styleFolder: string): string {
+  const camelName = kebabToCamel(kebabName);
+  // 对于图片类型，添加Image后缀
+  if (styleFolder === 'image') {
+    return \`\${capitalizeFirstLetter(camelName)}Image\`;
+  }
+  // 对于其他类型，添加样式名后缀
+  return \`\${capitalizeFirstLetter(camelName)}\${capitalizeFirstLetter(styleFolder)}\`;
+}
+
+export default function Icon({ icon, size = 24, className = '', ...props }: IconProps) {
+  if (!icon) return null;
+  
+  // 处理空图标
+  if (!icon.name && !icon.url) {
+    return (
+      <DefaultIcons.EmptyDefault
+        size={size}
+        className={className}
+        {...props}
+        style={{
+          ...props.style,
+          '--ll-svg-default-color': 'var(--ll-fg-primary)'
+        } as React.CSSProperties}
+      />
+    );
+  }
+  
+  // 处理自定义URL图标
+  if (icon.url) {
+    return (
+      <img 
+        src={icon.url} 
+        alt="icon" 
+        className={className}
+        style={{ 
+          width: typeof size === 'number' ? \`\${size}px\` : size,
+          height: typeof size === 'number' ? \`\${size}px\` : size,
+          ...props.style 
+        }}
+        {...props}
+      />
+    );
+  }
+
+  // 获取对应的图标库
+  let iconLibrary: any;
+  switch (icon.type) {
+    case 'outline':
+      iconLibrary = OutlineIcons;
+      break;
+    case 'solid':
+      iconLibrary = SolidIcons;
+      break;
+    case 'default':
+      iconLibrary = DefaultIcons;
+      break;
+    case 'image':
+      iconLibrary = ImageIcons;
+      break;
+    default:
+      iconLibrary = OutlineIcons;
+  }
+
+  // 计算组件名
+  const componentName = kebabToComponentName(icon.name, icon.type);
+
+  // 获取图标组件
+  const IconComponent = iconLibrary[componentName];
+
+  if (!IconComponent) {
+    console.warn(\`Icon component "\${componentName}" not found in \${icon.type} style.\`);
+    return (
+      <DefaultIcons.EmptyDefault
+        size={size}
+        className={className}
+        {...props}
+        style={{
+          ...props.style,
+          '--ll-svg-default-color': 'var(--ll-fg-primary)'
+        } as React.CSSProperties}
+      />
+    );
+  }
+
+  return (
+    <IconComponent
+      size={size}
+      className={className}
+      {...props}
+      style={{
+        ...props.style,
+        '--ll-svg-default-color': 'var(--ll-fg-primary)'
+      } as React.CSSProperties}
+    />
+  );
+}`}</pre>
+
+          <p className="text-sm text-green-700 mt-2">
+            <strong>使用方式：</strong>
+          </p>
+          <pre className="mt-1 bg-green-100 p-2 rounded text-xs overflow-auto">{`// 使用图标
+<Icon 
+  icon={{ name: 'trophy', type: 'image' }} 
+  size={48} 
+  className="my-trophy" 
+/>
+
+// 使用SVG图标
+<Icon 
+  icon={{ name: 'check-circle', type: 'outline' }} 
+  size={24} 
+  className="text-green-500" 
+/>`}</pre>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* React 使用示例 */}
           <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col h-full">
             <h3 className="text-md font-medium text-gray-900 mb-3">
-              React Usage
+              React 组件用法
             </h3>
             <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto flex-grow">
-              {`import { VipImage } from '@hashcoop/icons/image';
+              {`// 添加到应用的入口文件（如 main.tsx 或 App.tsx）中：
+import { setBasePath } from '@hashcoop/icons/image';
+
+// 重要：设置图片基础路径，应在应用初始化时执行一次
+setBasePath('/assets/images'); // 适配您项目的实际路径
+
+// 然后在组件中使用：
+import { VipImage } from '@hashcoop/icons/image';
 
 function MyComponent() {
   return (
@@ -382,16 +592,22 @@ function MyComponent() {
   );
 }
 
-// 简单的图片组件
-function SimpleImageComponent({ name, size = 64 }) {
-  return (
+// 如果需要手动使用图片URL
+function SimpleImageComponent({ imageName }) {
+  // 导入和使用图片URL
+  import { getImageUrl } from '@hashcoop/icons/js/image';
+  
+  // 获取图片资源地址
+  const imageUrl = getImageUrl(imageName);
+  
+  return imageUrl ? (
     <img 
-      src={'/image/' + name + '.png'}
-      alt={name}
-      style={{ width: size + 'px', height: size + 'px' }}
+      src={imageUrl}
+      alt={imageName}
+      style={{ width: '64px', height: '64px' }}
       className="my-custom-class"
     />
-  );
+  ) : null;
 }`}
             </pre>
           </div>
@@ -399,30 +615,41 @@ function SimpleImageComponent({ name, size = 64 }) {
           {/* JavaScript 使用示例 */}
           <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col h-full">
             <h3 className="text-md font-medium text-gray-900 mb-3">
-              JavaScript Usage
+              JavaScript API 用法
             </h3>
             <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto flex-grow">
-              {`import { getImage, getAllImageNames } from '@hashcoop/icons/js/image';
+              {`import { 
+  getImage, 
+  getAllImageNames, 
+  setBasePath, 
+  getImageUrl 
+} from '@hashcoop/icons/js/image';
+
+// 重要：设置图片基础路径，应在应用初始化时执行一次
+setBasePath('/assets/icons'); // 适配您项目的实际路径
 
 // 获取所有可用图片名称
 const imageNames = getAllImageNames();
 
 // 创建图片元素
-const imgElement = getImage('VIP', { 
+const imgElement = getImage('gold', { 
   size: 64, 
   className: 'my-custom-class',
-  alt: 'VIP图标'
+  alt: 'Gold图标'
 });
 
 // 添加到DOM
 document.getElementById('container').appendChild(imgElement);
 
-// 另一种简单的方式
-const img = document.createElement('img');
-img.src = '/image/VIP.png';
-img.width = 64;
-img.height = 64;
-document.getElementById('container').appendChild(img);`}
+// 另一种方式 - 使用图片URL
+const imgUrl = getImageUrl('gold');
+if (imgUrl) {
+  const img = document.createElement('img');
+  img.src = imgUrl;
+  img.width = 64;
+  img.height = 64;
+  document.getElementById('container').appendChild(img);
+}`}
             </pre>
           </div>
         </div>

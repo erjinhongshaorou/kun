@@ -41,17 +41,17 @@ function camelCaseAttributes(svg: string): string {
     .replace(/text-anchor/g, "textAnchor")
     .replace(/dominant-baseline/g, "dominantBaseline")
     .replace(/mask-units/g, "maskUnits")
-    .replace(/style="([^"]*)"/g, (match, styleString) => {
+    .replace(/style="([^"]*)"/g, (match: string, styleString: string) => {
       // 将style字符串转换为对象字符串
       if (!styleString) return "style={{}}";
 
       const styleObj = styleString
         .split(";")
-        .filter((s) => s.trim())
-        .map((s) => {
-          const [key, value] = s.split(":").map((part) => part.trim());
+        .filter((s: string) => s.trim())
+        .map((s: string) => {
+          const [key, value] = s.split(":").map((part: string) => part.trim());
           // 转换key为驼峰命名
-          const camelKey = key.replace(/-([a-z])/g, (_, char) =>
+          const camelKey = key.replace(/-([a-z])/g, (_: string, char: string) =>
             char.toUpperCase()
           );
           return `"${camelKey}":"${value}"`;
@@ -123,6 +123,7 @@ async function generateIconComponents() {
       // 生成图片组件代码
       const imageComponentCode = `
       import React, { forwardRef, memo } from 'react'
+      import { getBasePath } from '../../image/config'
       
       interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
         size?: number | string
@@ -142,10 +143,14 @@ async function generateIconComponents() {
           ...props.style
         };
         
+        // 使用配置的基础路径
+        const basePath = getBasePath();
+        const imageSrc = \`\${basePath}/${fileName}\`;
+        
         return (
           <img
             ref={ref}
-            src={\`/image/${fileName}\`}
+            src={imageSrc}
             alt={alt}
             className={className}
             style={style}
@@ -205,17 +210,20 @@ async function generateIconComponents() {
           // 确保所有mask-type属性都转换为maskType
           .replace(/mask-type/g, "maskType")
           // 确保所有style属性都转换为React风格的对象
-          .replace(/style="([^"]*)"/g, (match, styleString) => {
+          .replace(/style="([^"]*)"/g, (match: string, styleString: string) => {
             if (!styleString) return "";
 
             const styleObj = styleString
               .split(";")
-              .filter((s) => s.trim())
-              .map((s) => {
-                const [key, value] = s.split(":").map((part) => part.trim());
+              .filter((s: string) => s.trim())
+              .map((s: string) => {
+                const [key, value] = s
+                  .split(":")
+                  .map((part: string) => part.trim());
                 // 转换key为驼峰命名
-                const camelKey = key.replace(/-([a-z])/g, (_, char) =>
-                  char.toUpperCase()
+                const camelKey = key.replace(
+                  /-([a-z])/g,
+                  (_: string, char: string) => char.toUpperCase()
                 );
                 return `"${camelKey}":"${value}"`;
               })
@@ -407,6 +415,34 @@ async function generateIconComponents() {
 
 // 生成图片入口文件
 async function generateImageEntryFiles(imageSets: ImageSet[]) {
+  // 基础配置文件内容
+  const configContent = `
+  // 基础路径配置，可以在应用中设置
+  let basePath = '/image';
+  
+  /**
+   * 设置图片的基础路径
+   * 在使用其他项目中使用此库时，可能需要修改为不同的路径
+   * 例如 setBasePath('/assets/images') 或 setBasePath('https://cdn.example.com/images')
+   */
+  export function setBasePath(path: string): void {
+    basePath = path.endsWith('/') ? path.slice(0, -1) : path;
+  }
+  
+  /**
+   * 获取当前配置的基础路径
+   */
+  export function getBasePath(): string {
+    return basePath;
+  }
+  `;
+
+  // 将配置文件写入config.ts
+  const entryDir = `build/image`;
+  await fs.mkdir(entryDir, { recursive: true });
+  await fs.writeFile(`${entryDir}/config.ts`, configContent);
+
+  // 生成图片组件的入口文件，导出所有组件
   const entryContent = imageSets
     .map(
       ({ name }) =>
@@ -414,9 +450,14 @@ async function generateImageEntryFiles(imageSets: ImageSet[]) {
     )
     .join("\n");
 
-  const entryDir = `build/image`;
-  await fs.mkdir(entryDir, { recursive: true });
-  await fs.writeFile(`${entryDir}/index.ts`, entryContent);
+  // 在入口文件中也导出配置函数
+  const fullEntryContent = `
+  export * from './config';
+  
+  ${entryContent}
+  `;
+
+  await fs.writeFile(`${entryDir}/index.ts`, fullEntryContent);
 }
 
 // 生成JS版本的图片使用API
@@ -432,6 +473,8 @@ async function generateJsImagesVersion(imageFiles: string[]) {
   }
 
   const jsImageContent = `
+  import { getBasePath } from './config';
+  
   export interface ImageOptions {
     size?: number | string;
     className?: string;
@@ -441,6 +484,9 @@ async function generateJsImagesVersion(imageFiles: string[]) {
   
   // 图片名称到文件名的映射
   const imageMap: Record<string, string> = ${JSON.stringify(images)};
+  
+  // 从config中重新导出基础路径设置和获取函数
+  export { setBasePath, getBasePath } from './config';
   
   // 获取所有可用的图片名称
   export function getAllImageNames(): string[] {
@@ -457,6 +503,12 @@ async function generateJsImagesVersion(imageFiles: string[]) {
     return imageMap[name] || null;
   }
   
+  // 根据名称获取图片URL路径
+  export function getImageUrl(name: string): string | null {
+    const fileName = imageMap[name];
+    return fileName ? \`\${getBasePath()}/\${fileName}\` : null;
+  }
+  
   // 创建图片HTML元素
   export function getImage(name: string, options: ImageOptions = {}): HTMLImageElement | null {
     const {
@@ -466,16 +518,14 @@ async function generateJsImagesVersion(imageFiles: string[]) {
       style = {}
     } = options;
     
-    const imageFileName = imageMap[name];
-    
-    if (!imageFileName) {
+    const fileName = imageMap[name];
+    if (!fileName) {
       console.warn(\`Image "\${name}" not found\`);
       return null;
     }
     
     const img = document.createElement('img');
-    // 使用Vite的公共目录（假设图片已被复制到public/image目录）
-    img.src = \`/image/\${imageFileName}\`;
+    img.src = \`\${getBasePath()}/\${fileName}\`;
     img.alt = alt;
     
     if (className) {

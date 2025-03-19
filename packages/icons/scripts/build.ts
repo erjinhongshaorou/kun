@@ -15,6 +15,10 @@ async function buildPackage() {
     await fs.mkdir("dist/esm/image", { recursive: true });
     await fs.mkdir("dist/cjs/image", { recursive: true });
 
+    // 为组件中导入图片创建目录
+    await fs.mkdir("dist/esm/components/image/images", { recursive: true });
+    await fs.mkdir("dist/cjs/components/image/images", { recursive: true });
+
     // 为demo应用创建图片目录
     // Vite默认会从public目录复制静态资源
     await fs
@@ -33,6 +37,10 @@ async function buildPackage() {
       // 复制到dist目录
       await fs.copyFile(file, `dist/esm/image/${fileName}`);
       await fs.copyFile(file, `dist/cjs/image/${fileName}`);
+
+      // 复制到组件images目录 - 这样import导入路径才能正确解析
+      await fs.copyFile(file, `dist/esm/components/image/images/${fileName}`);
+      await fs.copyFile(file, `dist/cjs/components/image/images/${fileName}`);
 
       // 复制到demo应用的Vite public目录，这样可以通过/image/xxx.png访问
       try {

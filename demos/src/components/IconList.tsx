@@ -45,6 +45,10 @@ export default function IconList({
   const [gridHeight, setGridHeight] = useState(350); // 默认网格高度
   const gridRef = useRef<HTMLDivElement>(null);
 
+  // 添加 Transition 组件所需的 refs
+  const reactTransitionRef = useRef(null);
+  const jsTransitionRef = useRef(null);
+
   // 同步顶层displayMode状态
   useEffect(() => {
     setDisplayMode(propDisplayMode);
@@ -204,6 +208,7 @@ export default function IconList({
         {/* 使用同一绝对定位层，确保内容在同一位置切换 */}
         <div style={{ position: "absolute", width: "100%", top: 0, left: 0 }}>
           <Transition
+            nodeRef={reactTransitionRef}
             in={displayMode === "react"}
             timeout={duration}
             mountOnEnter
@@ -211,6 +216,7 @@ export default function IconList({
           >
             {(state) => (
               <div
+                ref={reactTransitionRef}
                 style={{
                   transition: `all ${duration}ms ease-in-out`,
                   ...transitionStyles[state],
@@ -253,6 +259,7 @@ export default function IconList({
           </Transition>
 
           <Transition
+            nodeRef={jsTransitionRef}
             in={displayMode === "js"}
             timeout={duration}
             mountOnEnter
@@ -260,6 +267,7 @@ export default function IconList({
           >
             {(state) => (
               <div
+                ref={jsTransitionRef}
                 style={{
                   transition: `all ${duration}ms ease-in-out`,
                   ...transitionStyles[state],
